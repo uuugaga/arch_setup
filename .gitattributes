@@ -1,0 +1,9 @@
+* text=auto eol=lf
+
+# Windows-only helpers (none currently) should keep CRLF.
+*.ps1 text eol=crlf
+
+# Binary-ish assets.
+*.png binary
+*.jpg binary
+*.webp binary

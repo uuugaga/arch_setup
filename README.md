@@ -12,6 +12,18 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 - Never runs `sudo paru`.
 - Never reboots, restarts the VM, or restores snapshots on its own.
 
+## Status
+
+Verified on 2026-11-03 in the VirtualBox guest `ArchLinux x86_64`:
+
+- `logs/validate.md`: **89 PASS / 2 WARN / 0 FAIL**
+- `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
+  and portals confirmed on the graphical console (3D acceleration required)
+- `tests/smoke-test.sh`: 21 PASS / 0 FAIL
+
+The optional `install/50-extras.sh` modules (fcitx5, awww, apps, gaming, zsh)
+are implemented and syntax-checked, but were **not** exercised in this VM run.
+
 ## Structure
 
 ```text
