@@ -1,0 +1,21 @@
+# managed-by: arch-niri-setup
+
+# Starship prompt.
+eval "$(starship init zsh)"
+
+# Plugins from the official repositories.
+source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY HIST_IGNORE_DUPS HIST_IGNORE_ALL_DUPS
+
+alias ls='ls --color=auto'
+alias ll='ls -lah'
+alias pacs='pacman -Ss'
+alias paci='sudo pacman -S'
+alias pacu='sudo pacman -Syu'
+alias paru-update='paru -Syu'
+alias paru-clean='paru -Sc'

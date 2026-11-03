@@ -1,0 +1,14 @@
+# managed-by: arch-niri-setup
+
+font=JetBrainsMono Nerd Font 11
+background-color=#0d0f14ee
+text-color=#cdd6f4
+border-color=#a6adc8
+border-size=1
+border-radius=12
+padding=12
+margin=10
+width=360
+height=120
+default-timeout=5000
+anchor=top-right

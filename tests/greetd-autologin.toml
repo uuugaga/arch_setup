@@ -1,0 +1,11 @@
+# TEST FIXTURE ONLY - never deploy on a real machine.
+# greetd autologin used by the graphical-console test to prove that niri
+# starts and renders without interactive login. Restore
+# dotfiles/greetd/config.toml immediately afterwards.
+
+[terminal]
+vt = 1
+
+[default_session]
+command = "niri-session"
+user = "uuugaga"

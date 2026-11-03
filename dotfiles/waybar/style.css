@@ -1,0 +1,135 @@
+/* managed-by: arch-niri-setup */
+
+* {
+  border: none;
+  border-radius: 0;
+  font-family: "JetBrainsMono Nerd Font", "Noto Sans CJK TC", sans-serif;
+  font-size: 14px;
+  min-height: 0;
+}
+
+window#waybar {
+  background: transparent;
+  color: #a6adc8;
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+  background: rgba(13, 15, 20, 0.88);
+  border: 1px solid rgba(166, 173, 200, 0.20);
+  border-radius: 12px;
+  padding: 0 8px;
+}
+
+#custom-launcher,
+#workspaces,
+#window,
+#clock,
+#custom-notifications,
+#custom-ime,
+#cpu,
+#memory,
+#network,
+#bluetooth,
+#custom-mic,
+#pulseaudio {
+  padding: 0 9px;
+  margin: 4px 2px;
+  color: #a6adc8;
+}
+
+#custom-launcher {
+  font-size: 16px;
+}
+
+#workspaces button {
+  color: #a6adc8;
+  padding: 0 5px;
+  background: transparent;
+}
+
+#workspaces button.active {
+  color: #cdd6f4;
+}
+
+#window {
+  color: #a6adc8;
+}
+
+#clock {
+  color: #a6adc8;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#cpu,
+#memory {
+  color: #a6adc8;
+  font-size: 14px;
+}
+
+#custom-ime {
+  color: #a6adc8;
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 20px;
+}
+
+/* Hide the IME indicator until fcitx5 is installed by 50-extras.sh. */
+#custom-ime.missing {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+}
+
+#custom-notifications,
+#network,
+#bluetooth,
+#custom-mic,
+#pulseaudio {
+  color: #a6adc8;
+  font-size: 16px;
+}
+
+#network.disconnected,
+#bluetooth.disabled,
+#bluetooth.off,
+#custom-mic.muted,
+#custom-mic.missing,
+#pulseaudio.muted {
+  color: #a6adc8;
+}
+
+#custom-mic,
+#pulseaudio {
+  padding: 0 4px;
+  margin: 0;
+}
+
+#pulseaudio-slider {
+  min-width: 110px;
+  padding: 0 8px;
+  margin: 0;
+}
+
+#pulseaudio-slider trough {
+  min-width: 110px;
+  min-height: 6px;
+  border-radius: 999px;
+  background: rgba(166, 173, 200, 0.25);
+}
+
+#pulseaudio-slider highlight {
+  min-height: 6px;
+  border-radius: 999px;
+  background: #a6adc8;
+}
+
+#pulseaudio-slider slider {
+  min-width: 12px;
+  min-height: 12px;
+  border-radius: 999px;
+  background: #a6adc8;
+  box-shadow: none;
+}

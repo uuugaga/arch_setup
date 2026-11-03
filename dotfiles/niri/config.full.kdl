@@ -1,0 +1,116 @@
+// managed-by: arch-niri-setup
+// Full niri configuration: core + optional modules.
+// Installed by install/50-extras.sh (fcitx5 + browser + flat mouse accel).
+// It supersedes dotfiles/niri/config.kdl when extras are enabled.
+
+environment {
+    GTK_IM_MODULE "fcitx"
+    QT_IM_MODULE "fcitx"
+    XMODIFIERS "@im=fcitx"
+    SDL_IM_MODULE "fcitx"
+    GLFW_IM_MODULE "ibus"
+}
+
+input {
+    keyboard {
+        xkb {
+            layout "us"
+        }
+    }
+
+    touchpad {
+        tap
+        natural-scroll
+    }
+
+    // Disable pointer acceleration for mice (kept from the old setup).
+    mouse {
+        accel-profile "flat"
+    }
+}
+
+layout {
+    gaps 10
+
+    focus-ring {
+        width 4
+        active-color "#89b4fa"
+        inactive-color "#313244"
+        urgent-color "#f38ba8"
+    }
+
+    border {
+        width 2
+        active-color "#89b4fa"
+        inactive-color "#313244"
+        urgent-color "#f38ba8"
+    }
+}
+
+window-rule {
+    geometry-corner-radius 12
+    clip-to-geometry true
+}
+
+prefer-no-csd
+
+spawn-at-startup "waybar"
+spawn-at-startup "mako"
+spawn-at-startup "sh" "-lc" "sleep 1; fcitx5 -d --replace"
+spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+
+binds {
+    // Applications
+    Mod+T { spawn "alacritty"; }
+    Mod+D { spawn "fuzzel"; }
+    Mod+B { spawn "zen-browser"; }
+    Mod+E { spawn "nautilus"; }
+
+    // Windows
+    Mod+Q { close-window; }
+    Mod+F { maximize-column; }
+    Mod+Shift+F { fullscreen-window; }
+    Mod+V { toggle-window-floating; }
+
+    // Screenshot: region -> swappy
+    Mod+S { spawn "sh" "-c" "grim -g \"$(slurp)\" - | swappy -f -"; }
+
+    // Lock screen
+    Mod+Escape { spawn "swaylock"; }
+
+    // Input method toggle
+    Mod+Space { spawn "fcitx5-remote" "-t"; }
+
+    // Focus
+    Mod+Left { focus-column-left; }
+    Mod+Right { focus-column-right; }
+    Mod+Up { focus-workspace-up; }
+    Mod+Down { focus-workspace-down; }
+
+    // Move windows
+    Mod+Shift+Left { move-column-left; }
+    Mod+Shift+Right { move-column-right; }
+    Mod+Shift+Up { move-column-to-workspace-up; }
+    Mod+Shift+Down { move-column-to-workspace-down; }
+
+    // Workspaces 1-9
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+
+    Mod+Shift+1 { move-column-to-workspace 1; }
+    Mod+Shift+2 { move-column-to-workspace 2; }
+    Mod+Shift+3 { move-column-to-workspace 3; }
+    Mod+Shift+4 { move-column-to-workspace 4; }
+    Mod+Shift+5 { move-column-to-workspace 5; }
+    Mod+Shift+6 { move-column-to-workspace 6; }
+    Mod+Shift+7 { move-column-to-workspace 7; }
+    Mod+Shift+8 { move-column-to-workspace 8; }
+    Mod+Shift+9 { move-column-to-workspace 9; }
+}

@@ -1,0 +1,6 @@
+[Unit]
+Description=Rotate wallpaper from ~/Pictures/Wallpapers
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/wallpaper-rotate

@@ -1,0 +1,158 @@
+{
+  // managed-by: arch-niri-setup
+  "layer": "top",
+  "position": "top",
+  "height": 40,
+  "margin-top": 8,
+  "margin-left": 8,
+  "margin-right": 8,
+  "spacing": 8,
+
+  "modules-left": [
+    "custom/launcher",
+    "niri/workspaces",
+    "niri/window"
+  ],
+
+  "modules-center": [
+    "clock"
+  ],
+
+  "modules-right": [
+    "custom/notifications",
+    "custom/ime",
+    "cpu",
+    "memory",
+    "network",
+    "bluetooth",
+    "custom/mic",
+    "pulseaudio",
+    "pulseaudio/slider"
+  ],
+
+  "custom/launcher": {
+    "format": "󰣇",
+    "tooltip": "Open launcher",
+    "on-click": "fuzzel"
+  },
+
+  "niri/workspaces": {
+    "format": "{icon}",
+    "format-icons": {
+      "active": "●",
+      "default": "○"
+    }
+  },
+
+  "niri/window": {
+    "format": "{}",
+    "max-length": 60
+  },
+
+  "clock": {
+    "format": "{:%Y-%m-%d  %H:%M}",
+    "tooltip-format": "<tt>{calendar}</tt>",
+    "calendar": {
+      "mode": "month",
+      "weeks-pos": "right",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#a6adc8'><b>{}</b></span>",
+        "days": "<span color='#cdd6f4'><b>{}</b></span>",
+        "weeks": "<span color='#7f849c'><b>W{}</b></span>",
+        "weekdays": "<span color='#a6adc8'><b>{}</b></span>",
+        "today": "<span color='#cdd6f4'><b><u>{}</u></b></span>"
+      }
+    },
+    "on-click": "gsimplecal"
+  },
+
+  "custom/notifications": {
+    "exec": "~/.config/waybar/scripts/notifications.sh",
+    "interval": 2,
+    "return-type": "json",
+    "format": "{}",
+    "on-click": "~/.config/waybar/scripts/notifications-menu.sh",
+    "on-click-right": "makoctl dismiss -a",
+    "on-click-middle": "makoctl restore"
+  },
+
+  "custom/ime": {
+    "exec": "~/.config/waybar/scripts/ime-status.sh",
+    "interval": 1,
+    "return-type": "json",
+    "format": "{}",
+    "on-click": "fcitx5-remote -t",
+    "on-click-right": "fcitx5-configtool",
+    "on-click-middle": "fcitx5-remote -s keyboard-us"
+  },
+
+  "cpu": {
+    "format": "CPU {usage}%",
+    "interval": 2
+  },
+
+  "memory": {
+    "format": "RAM {}%",
+    "interval": 2
+  },
+
+  "network": {
+    "format-ethernet": "󰈀",
+    "format-wifi": "{icon}",
+    "format-disconnected": "󰤮",
+    "format-icons": ["󰤯", "󰤟", "󰤢", "󰤥", "󰤨"],
+    "tooltip-format": "{ifname}: {ipaddr}",
+    "tooltip-format-wifi": "{essid}: {signalStrength}% | {ipaddr}",
+    "tooltip-format-ethernet": "{ifname}: {ipaddr}",
+    "tooltip-format-disconnected": "Disconnected",
+    "on-click": "sh -c \"$HOME/.config/waybar/scripts/wifi-menu.sh\"",
+    "on-click-right": "alacritty -e nmtui-connect",
+    "on-click-middle": "nm-connection-editor"
+  },
+
+  "bluetooth": {
+    "format": "󰂯",
+    "format-disabled": "󰂲",
+    "format-off": "󰂲",
+    "format-on": "󰂯",
+    "format-connected": "󰂱",
+    "tooltip-format": "{status}",
+    "tooltip-format-connected": "{device_alias}",
+    "on-click": "blueman-manager",
+    "on-click-right": "bluetoothctl power toggle"
+  },
+
+  "custom/mic": {
+    "exec": "~/.config/waybar/scripts/mic-status.sh",
+    "interval": 1,
+    "return-type": "json",
+    "format": "{}",
+    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
+    "on-click-right": "pavucontrol",
+    "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%-"
+  },
+
+  "pulseaudio": {
+    "format": "{icon}",
+    "format-muted": "󰝟",
+    "format-icons": {
+      "default": ["󰕿", "󰖀", "󰕾"],
+      "headphone": "󰋋",
+      "headset": "󰋎",
+      "bluetooth": "󰂯"
+    },
+    "tooltip-format": "{desc}: {volume}%",
+    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "on-click-right": "pavucontrol",
+    "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+  },
+
+  "pulseaudio/slider": {
+    "min": 0,
+    "max": 100,
+    "orientation": "horizontal"
+  }
+}

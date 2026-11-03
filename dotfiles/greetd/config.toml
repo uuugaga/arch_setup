@@ -1,0 +1,10 @@
+# managed-by: arch-niri-setup
+# greetd + tuigreet -> niri-session.
+# Edit this file (or install/30-niri.sh's deploy list), not /etc/greetd directly.
+
+[terminal]
+vt = 1
+
+[default_session]
+command = "tuigreet --time --remember --cmd niri-session"
+user = "greeter"

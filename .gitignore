@@ -1,0 +1,5 @@
+logs/*.log
+logs/*.md
+logs/*.env
+logs/latest-*
+!logs/.gitkeep
