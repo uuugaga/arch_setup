@@ -350,6 +350,39 @@ check_drift "${DOTFILES_DIR}/fuzzel/fuzzel.ini" "${HOME}/.config/fuzzel/fuzzel.i
 check_drift "${DOTFILES_DIR}/mako/config" "${HOME}/.config/mako/config" "mako" "mako-config"
 check_drift "${DOTFILES_DIR}/alacritty/alacritty.toml" "${HOME}/.config/alacritty/alacritty.toml" "alacritty" "alacritty.toml"
 
+section "Snapshots"
+if has_command snapper && [[ -f /etc/snapper/configs/root ]]; then
+  result "snapshots:snapper" PASS "snapper root config exists"
+
+  if sudo -n grep -q '^TIMELINE_CREATE="no"' /etc/snapper/configs/root 2>/dev/null; then
+    result "snapshots:timeline" PASS "TIMELINE_CREATE=no (manual-only)"
+  else
+    result "snapshots:timeline" WARN "timeline snapshots may still be enabled"
+  fi
+
+  for timer in snapper-timeline.timer snapper-cleanup.timer snapper-boot.timer; do
+    if systemctl is-enabled -q "${timer}" 2>/dev/null; then
+      result "snapshots:${timer}" WARN "enabled"
+    else
+      result "snapshots:${timer}" PASS "disabled"
+    fi
+  done
+
+  if sudo -n snapper -c root list --columns description 2>/dev/null | grep -qx "baseline-manual"; then
+    result "snapshots:baseline" PASS "baseline-manual snapshot exists"
+  else
+    result "snapshots:baseline" WARN "baseline-manual snapshot missing"
+  fi
+
+  if has_command btrfs-assistant; then
+    result "snapshots:gui" PASS "btrfs-assistant installed"
+  else
+    result "snapshots:gui" WARN "btrfs-assistant missing"
+  fi
+else
+  result "snapshots:snapper" WARN "snapper is not configured (optional 55-snapshots.sh)"
+fi
+
 section "GPU / EGL"
 if has_command eglinfo; then
   EGL_OUT="$(sudo -n eglinfo -B 2>/dev/null || true)"

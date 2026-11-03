@@ -34,6 +34,8 @@ folder is user history: **do not modify or delete it** unless explicitly asked.
 - `install/45-theme.sh` - wallpaper rotation + dynamic theme; deploys scripts,
   templates and the user timer.
 - `install/50-extras.sh` - optional modules; flags, never implicit.
+- `install/55-snapshots.sh` - manual-only Snapper + Btrfs Assistant; disables
+  automatic timers and creates one baseline snapshot.
 - `install/60-gpu.sh` - VM/bare-metal GPU drivers; `WANT_32BIT=1` for Steam.
 - `install/90-validate.sh` - read-only; writes `logs/validate.md`.
 - `tests/smoke-test.sh` - fast read-only checks.
@@ -48,7 +50,7 @@ Theme source files:
 
 ## Ordering
 
-Core order: `00 -> 10 -> 20 -> 30 -> 40 -> 45 -> 60 -> 90 -> smoke-test`.
+Core order: `00 -> 10 -> 20 -> 30 -> 40 -> 45 -> 50 -> 55 -> 60 -> 90 -> smoke-test`.
 
 Extras order: core first, then `50-extras.sh --fcitx` **after** `30-niri.sh`
 because `--fcitx` deploys `dotfiles/niri/config.full.kdl` over the core config.
@@ -102,6 +104,27 @@ or re-run `--fcitx`.
   first. Blur only affects the surface backdrop, not glyphs. VirtualBox scaled
   mode / HiDPI scaling blurs the entire framebuffer; semi-transparent surfaces
   also use grayscale antialiasing instead of subpixel AA.
+
+## Snapshots (manual-only)
+
+- `55-snapshots.sh` installs `snapper` and `btrfs-assistant`, creates the root
+  snapper config, disables all automatic timers, sets `TIMELINE_CREATE=no`, and
+  creates one `baseline-manual` snapshot.
+- Do **not** install `snap-pac` or `grub-btrfs` in this project. The user
+  explicitly wants manual snapshots and no GRUB snapshot menu / `grub-btrfsd`
+  overhead.
+- Keep the baseline snapshot idempotent: rerunning the script must not create
+  duplicate `baseline-manual` entries.
+- Snapshots are for `@` only. `@home`, `@log` and `@pkg` are separate; do not
+  include them in the root snapshot.
+- The automatic cleanup timer is disabled; old snapshots are deleted manually
+  or through Btrfs Assistant. `NUMBER_LIMIT=5` and
+  `NUMBER_LIMIT_IMPORTANT=3` are retention hints only.
+- No snapshot boot entries: restore with Btrfs Assistant or from a live
+  environment (`snapper rollback`). Snapshots are not a backup; use btrbk for
+  external copies.
+- `90-validate.sh` checks snapper config, `TIMELINE_CREATE=no`, disabled timers,
+  the baseline snapshot and the Btrfs Assistant binary.
 
 ## Display / multi-monitor
 

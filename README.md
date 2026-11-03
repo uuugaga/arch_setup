@@ -16,7 +16,7 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-03 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **105 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
+- `logs/validate.md`: **112 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
@@ -43,6 +43,7 @@ install/
   40-desktop.sh       Waybar/Fuzzel/mako/Alacritty configs + services
   45-theme.sh         wallpaper rotation + dynamic theme (awww + Pillow)
   50-extras.sh        optional: fcitx5, apps, gaming, zsh
+  55-snapshots.sh     manual-only Snapper + Btrfs Assistant
   60-gpu.sh           Mesa/Vulkan/VA-API per GPU (VM aware)
   90-validate.sh      read-only validation -> logs/validate.md
   lib/common.sh       logging, backups, deploy, package helpers
@@ -83,6 +84,7 @@ cd arch-niri-setup
 ./install/30-niri.sh
 ./install/40-desktop.sh
 ./install/45-theme.sh
+./install/55-snapshots.sh
 ./install/60-gpu.sh
 ./install/90-validate.sh
 ./tests/smoke-test.sh
@@ -242,6 +244,48 @@ Notes:
 - The VM has only one virtual output, so the GUI was verified with a single
   `Virtual-1` block. Multi-monitor arrangement uses the same nwg-displays GUI
   and cannot be physically tested without a second output.
+
+## Snapper manual snapshots
+
+The VM uses Btrfs with `@`, `@home`, `@log` and `@pkg`. `55-snapshots.sh`
+installs **snapper** and **btrfs-assistant** for manual-only snapshots:
+
+- timeline snapshots are disabled (`TIMELINE_CREATE=no`)
+- `snapper-timeline.timer`, `snapper-cleanup.timer`, `snapper-boot.timer` are
+  disabled
+- `snap-pac` is **not** installed (no automatic pacman pre/post snapshots)
+- `grub-btrfs` is **not** installed (no GRUB snapshot menu / `grub-btrfsd`)
+- one `baseline-manual` snapshot is created on the first run; reruns keep it
+  and do not create duplicates
+
+Commands:
+
+```bash
+sudo snapper -c root list
+sudo snapper -c root create --description "before update"
+sudo snapper -c root delete <number>
+btrfs-assistant          # GUI: create/list/delete/restore
+```
+
+`NUMBER_LIMIT=5` and `NUMBER_LIMIT_IMPORTANT=3` are set, but the automatic
+cleanup timer is disabled; delete old snapshots manually or via Btrfs Assistant.
+
+Why manual:
+
+- frequent updates would otherwise create a large number of timeline/pacman
+  snapshots
+- a large snapshot set makes GRUB regeneration and Btrfs metadata maintenance
+  heavier
+- manual snapshots are taken only before major updates (kernel, systemd, mesa,
+  niri, GPU drivers)
+
+Limitations:
+
+- no GRUB snapshot boot entries; restore with Btrfs Assistant or from a live
+  environment (`snapper rollback`)
+- snapshots are not backups; use `btrbk` to an external disk for that
+- root snapshots cover `@` (including `/boot`) but not `@home`
+- `@log` and `@pkg` are separate subvolumes and are not included
 
 ## Wallpaper and dynamic theme
 
