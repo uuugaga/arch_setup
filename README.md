@@ -148,8 +148,8 @@ FORCE=1 ./install/40-desktop.sh
 - CPU/RAM remain text modules with the same outer spacing; their content width
   naturally differs from icon-only modules.
 - The three bar pills use `rgba(bg, 0.62)`, a 1px accent border, a 14px radius
-  and a soft shadow. niri does not blur layer-shell panels, so the bar is
-  glass-tinted and semi-transparent but not frosted.
+  and a soft shadow. niri 26.04 layer rules add `background-effect { blur true }`
+  to the Waybar surface, so the bar is genuinely frosted.
 
 ## Wallpaper and dynamic theme
 
@@ -208,17 +208,20 @@ Glass / transparency:
 
 | Surface | Setting |
 |---|---|
-| Waybar pills | `rgba(bg, 0.62)` + accent border + soft shadow |
-| Alacritty | `opacity = 0.82` |
-| niri terminal rule | `background-effect { blur true; xray false; }` |
-| Fuzzel | background alpha 0.80 |
-| mako | background alpha 0.87 |
+| Waybar pills | `rgba(bg, 0.62)` + accent border + shadow + layer-rule blur |
+| Alacritty | `opacity = 0.62` |
+| niri terminal rule | `draw-border-with-background false` + `background-effect { blur true; xray false; }` |
+| Fuzzel | background alpha 0.80 + layer-rule blur |
+| mako | background alpha 0.87 + layer-rule blur |
 | GTK apps | opaque Adwaita surfaces with the matching accent color |
 
-The terminal gets a real frosted background because niri supports window blur.
-Waybar is a layer-shell panel; niri has no layer-shell blur rule, so it is
-semi-transparent but not blurred. GTK applications cannot be reliably made
-transparent without a custom theme.
+niri 26.04 supports background effects on both windows and layer-shell
+surfaces, so the bar and launcher can be frosted too. The terminal rule also
+needs `draw-border-with-background false`: otherwise niri paints the focus
+ring/border as a solid accent rectangle behind the window, and a transparent
+terminal shows that solid color instead of the wallpaper.
+
+GTK applications cannot be reliably made transparent without a custom theme.
 
 Generated files are **not** edited by hand. The source of truth is
 `dotfiles/theme/templates/`; `theme-from-wallpaper` writes the deployed configs

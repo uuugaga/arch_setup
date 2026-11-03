@@ -47,13 +47,43 @@ window-rule {
 // Frosted glass for the terminal; Alacritty provides the alpha.
 window-rule {
     match app-id="Alacritty"
+    // Do not paint the focus ring/border as a solid rectangle behind the
+    // window; otherwise a transparent terminal shows the accent color instead
+    // of the wallpaper.
+    draw-border-with-background false
     background-effect {
         blur true
         xray false
     }
 }
 
+// Blur the layer-shell surfaces so the bar and launcher are frosted too.
+layer-rule {
+    match namespace="^waybar$"
+    background-effect {
+        blur true
+    }
+}
+
+layer-rule {
+    match namespace="^launcher$"
+    background-effect {
+        blur true
+    }
+}
+
+layer-rule {
+    match namespace="^mako$"
+    background-effect {
+        blur true
+    }
+}
+
 prefer-no-csd
+
+hotkey-overlay {
+    skip-at-startup
+}
 
 spawn-at-startup "waybar"
 spawn-at-startup "mako"

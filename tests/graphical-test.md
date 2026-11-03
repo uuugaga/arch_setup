@@ -98,14 +98,19 @@ wallpaper.
 
 Glass checks:
 
-- Waybar pills are semi-transparent (`rgba(bg, 0.62)`); the wallpaper is visible
-  through them, but they are not blurred (niri has no layer-shell blur rule).
-- Alacritty is translucent (`opacity = 0.82`) and its background is blurred by
-  the niri window rule:
-  `background-effect { blur true; xray false; }`.
-- Fuzzel and mako backgrounds are translucent as well.
+- Waybar pills are semi-transparent (`rgba(bg, 0.62)`) and frosted by the
+  `layer-rule` for namespace `^waybar$`.
+- Alacritty is translucent (`opacity = 0.62`) and its background is blurred by
+  the niri window rule. The same rule must include
+  `draw-border-with-background false`; otherwise niri paints a solid accent
+  rectangle behind the window and the terminal looks opaque.
+- Fuzzel and mako backgrounds are translucent and blurred by their layer rules.
 - Put the terminal over both a dark and a bright wallpaper area and confirm the
-  text remains readable. The clock pill in particular sits over bright areas.
+  wallpaper is visible through it and the text remains readable. The clock pill
+  in particular sits over bright areas.
+- If every glyph on the VM console looks soft, compare a native 1280x800
+  screenshot. Blur affects only the backdrop; VirtualBox scaled mode/HiDPI
+  scaling blurs the whole framebuffer.
 
 Switch to the next image and wait for the transition:
 

@@ -78,19 +78,28 @@ or re-run `--fcitx`.
   path with `systemctl --user start wallpaper-rotate.service`.
 - GTK apps only get `prefer-dark` + the nearest `accent-color`; they are not
   fully recolored. State this limitation in reports.
-- Glass settings live in the templates:
-  - Waybar pills: `rgba(bg, 0.62)` + accent border + shadow. niri has no
-    layer-shell blur rule, so do not claim the bar is frosted.
-  - Alacritty: `opacity = 0.82`; niri window-rule
-    `background-effect { blur true; xray false; }` provides the frosted
-    background. Do not add a niri `opacity` window rule for terminals; it
-    fades the text too.
-  - Fuzzel: 0.80 background alpha. mako: 0.87.
+- Glass settings live in the templates/config:
+  - Waybar pills: `rgba(bg, 0.62)` + accent border + shadow. A niri `layer-rule`
+    for namespace `^waybar$` adds `background-effect { blur true }`.
+  - Alacritty: `opacity = 0.62`; niri window-rule
+    `draw-border-with-background false` plus
+    `background-effect { blur true; xray false; }`.
+    `draw-border-with-background false` is required: otherwise niri paints the
+    focus ring/border as a solid accent rectangle behind the window, which
+    shows through a transparent terminal and looks like an opaque tint.
+  - Fuzzel: 0.80 background alpha + `layer-rule` namespace `^launcher$` blur.
+  - mako: 0.87 background alpha + `layer-rule` namespace `^mako$` blur.
+  - niri `hotkey-overlay { skip-at-startup }` avoids the help overlay on every
+    login.
 - Keep the palette soft: background value around 0.13, saturation capped near
   0.22, accent value 0.74-0.84. Avoid returning to near-black backgrounds or
   fully saturated accents; check text contrast against bright wallpaper areas.
 - After changing transparency, take a console screenshot over both a dark and a
   bright part of the wallpaper and verify text contrast.
+- If the user reports all text is blurry, compare a native 1280x800 screenshot
+  first. Blur only affects the surface backdrop, not glyphs. VirtualBox scaled
+  mode / HiDPI scaling blurs the entire framebuffer; semi-transparent surfaces
+  also use grayscale antialiasing instead of subpixel AA.
 
 ## Validation protocol
 
