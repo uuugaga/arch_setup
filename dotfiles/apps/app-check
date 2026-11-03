@@ -42,7 +42,6 @@ else
   MISSING=$((MISSING + 1))
 fi
 check_cmd "Lazydocker" lazydocker
-check_cmd "Flatpak" flatpak
 
 echo
 echo "== Media =="
@@ -65,12 +64,6 @@ if id -nG | tr ' ' '\n' | grep -qx docker; then
   echo "current session is in the docker group"
 else
   echo "current session is not in the docker group (log out/in after install)"
-fi
-
-echo
-echo "== Flatpak remotes =="
-if command -v flatpak >/dev/null 2>&1; then
-  flatpak remotes 2>/dev/null || true
 fi
 
 echo

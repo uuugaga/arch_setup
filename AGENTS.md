@@ -111,7 +111,8 @@ or re-run `--fcitx`.
   against the current Node/V8.
 - Docker and Tailscale services are enabled/started. The user is added to the
   `docker` group (re-login required for the graphical session).
-- Flatpak uses a per-user remote: `flatpak remote-add --user`.
+- Flatpak is not installed; the project uses official repos + paru/AUR. If a
+  Flathub-only app is needed, install Flatpak manually.
 - `dotfiles/apps/app-check` is deployed to `~/.local/bin/app-check`; use
   `docker buildx version` for Buildx because it is a CLI plugin, not a PATH
   binary.

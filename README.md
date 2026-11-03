@@ -116,7 +116,7 @@ possible:
 |---|---|
 | Browser / communication | Zen Browser (AUR), Discord, Spotify Launcher, Bitwarden, qBittorrent, Tailscale |
 | Mail / remote / transfer | Thunderbird, Parsec (AUR), LocalSend (AUR) |
-| Development / containers | VS Code (AUR `visual-studio-code-bin`), Docker, Compose, Buildx, Lazydocker, Flatpak |
+| Development / containers | VS Code (AUR `visual-studio-code-bin`), Docker, Compose, Buildx, Lazydocker |
 | Media / files | Nautilus, mpv, OBS Studio, imv, Tauon Music Box |
 
 Notes:
@@ -127,7 +127,9 @@ Notes:
   rest. Rerun `./install/50-extras.sh --apps` after fixing the failure.
 - `docker.service` and `tailscaled.service` are enabled and started. The user is
   added to the `docker` group; log out/in before using Docker without sudo.
-- Flatpak uses a **per-user** Flathub remote (`flatpak remote-add --user`).
+- Flatpak is intentionally **not** installed. The app set uses official repos
+  and paru/AUR only. Install `flatpak` manually if you later need a
+  Flathub-only application.
 - Run `~/.local/bin/app-check` to verify the app set.
 - Tailscale still needs `sudo tailscale up` for account login.
 - Spotify Launcher downloads the actual Spotify client on first launch.

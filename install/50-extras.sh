@@ -161,10 +161,6 @@ if [[ "${WANT_APPS}" -eq 1 ]]; then
     warn "paru missing; skipping AUR apps. Run install/20-paru.sh first."
   fi
 
-  if has_command flatpak; then
-    run flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo || true
-  fi
-
   if has_command docker; then
     ensure_service_active docker.service
     if ! id -nG | tr ' ' '\n' | grep -qx docker; then
