@@ -57,14 +57,9 @@ window-rule {
     }
 }
 
-// Blur the layer-shell surfaces so the bar and launcher are frosted too.
-layer-rule {
-    match namespace="^waybar$"
-    background-effect {
-        blur true
-    }
-}
-
+// Blur the launcher and notification layer surfaces. Waybar is intentionally
+// not blurred: its layer surface spans the full screen width, so a layer-rule
+// would blur the transparent gaps between the pills too.
 layer-rule {
     match namespace="^launcher$"
     background-effect {

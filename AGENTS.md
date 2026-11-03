@@ -79,8 +79,10 @@ or re-run `--fcitx`.
 - GTK apps only get `prefer-dark` + the nearest `accent-color`; they are not
   fully recolored. State this limitation in reports.
 - Glass settings live in the templates/config:
-  - Waybar pills: `rgba(bg, 0.62)` + accent border + shadow. A niri `layer-rule`
-    for namespace `^waybar$` adds `background-effect { blur true }`.
+  - Waybar pills: `rgba(bg, 0.62)` + accent border + shadow. Do **not** add a
+    `^waybar$` layer-rule blur: Waybar's layer surface spans the full screen
+    width, so niri would blur the transparent gaps between the pills too.
+    Stock Waybar has no shaped blur region.
   - Alacritty: `opacity = 0.62`; niri window-rule
     `draw-border-with-background false` plus
     `background-effect { blur true; xray false; }`.

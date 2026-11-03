@@ -148,8 +148,10 @@ FORCE=1 ./install/40-desktop.sh
 - CPU/RAM remain text modules with the same outer spacing; their content width
   naturally differs from icon-only modules.
 - The three bar pills use `rgba(bg, 0.62)`, a 1px accent border, a 14px radius
-  and a soft shadow. niri 26.04 layer rules add `background-effect { blur true }`
-  to the Waybar surface, so the bar is genuinely frosted.
+  and a soft shadow. They are semi-transparent but **not blurred**: Waybar's
+  layer surface spans the full screen width, so a niri layer-rule would blur
+  the transparent gaps between the pills as well. Blur is applied to Fuzzel
+  and mako, whose layer surfaces are the visible blocks.
 
 ## Wallpaper and dynamic theme
 
@@ -208,7 +210,7 @@ Glass / transparency:
 
 | Surface | Setting |
 |---|---|
-| Waybar pills | `rgba(bg, 0.62)` + accent border + shadow + layer-rule blur |
+| Waybar pills | `rgba(bg, 0.62)` + accent border + shadow (no blur) |
 | Alacritty | `opacity = 0.62` |
 | niri terminal rule | `draw-border-with-background false` + `background-effect { blur true; xray false; }` |
 | Fuzzel | background alpha 0.80 + layer-rule blur |
@@ -216,10 +218,16 @@ Glass / transparency:
 | GTK apps | opaque Adwaita surfaces with the matching accent color |
 
 niri 26.04 supports background effects on both windows and layer-shell
-surfaces, so the bar and launcher can be frosted too. The terminal rule also
-needs `draw-border-with-background false`: otherwise niri paints the focus
-ring/border as a solid accent rectangle behind the window, and a transparent
-terminal shows that solid color instead of the wallpaper.
+surfaces. The terminal rule also needs `draw-border-with-background false`:
+otherwise niri paints the focus ring/border as a solid accent rectangle behind
+the window, and a transparent terminal shows that solid color instead of the
+wallpaper.
+
+Waybar is deliberately not blurred. Its layer surface is the full 1280px-wide
+strip, so a layer-rule blur affects the transparent gaps between the pills too,
+not just the pills. Stock Waybar has no shaped/blur-region API; per-pill blur
+would require a different bar architecture. The pills remain semi-transparent
+with sharp wallpaper visible in the gaps.
 
 GTK applications cannot be reliably made transparent without a custom theme.
 

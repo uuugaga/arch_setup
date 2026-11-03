@@ -98,8 +98,10 @@ wallpaper.
 
 Glass checks:
 
-- Waybar pills are semi-transparent (`rgba(bg, 0.62)`) and frosted by the
-  `layer-rule` for namespace `^waybar$`.
+- Waybar pills are semi-transparent (`rgba(bg, 0.62)`) with sharp wallpaper
+  visible in the transparent gaps. They must **not** be blurred: Waybar's layer
+  surface is full-width, so a `^waybar$` layer-rule would blur the entire top
+  strip.
 - Alacritty is translucent (`opacity = 0.62`) and its background is blurred by
   the niri window rule. The same rule must include
   `draw-border-with-background false`; otherwise niri paints a solid accent
