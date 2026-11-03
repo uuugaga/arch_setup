@@ -78,6 +78,19 @@ or re-run `--fcitx`.
   path with `systemctl --user start wallpaper-rotate.service`.
 - GTK apps only get `prefer-dark` + the nearest `accent-color`; they are not
   fully recolored. State this limitation in reports.
+- Glass settings live in the templates:
+  - Waybar pills: `rgba(bg, 0.62)` + accent border + shadow. niri has no
+    layer-shell blur rule, so do not claim the bar is frosted.
+  - Alacritty: `opacity = 0.82`; niri window-rule
+    `background-effect { blur true; xray false; }` provides the frosted
+    background. Do not add a niri `opacity` window rule for terminals; it
+    fades the text too.
+  - Fuzzel: 0.80 background alpha. mako: 0.87.
+- Keep the palette soft: background value around 0.13, saturation capped near
+  0.22, accent value 0.74-0.84. Avoid returning to near-black backgrounds or
+  fully saturated accents; check text contrast against bright wallpaper areas.
+- After changing transparency, take a console screenshot over both a dark and a
+  bright part of the wallpaper and verify text contrast.
 
 ## Validation protocol
 

@@ -201,30 +201,33 @@ def accent_name(hue: float) -> str:
 
 def build_palette(entries: list[dict]) -> tuple[dict[str, str], dict]:
     bg_hue, bg_sat = average_hue(entries)
-    bg_sat = clamp(bg_sat * 0.65, 0.08, 0.30)
+    bg_sat = clamp(bg_sat * 0.55, 0.06, 0.22)
 
-    bg = hsv_to_hex(bg_hue, bg_sat, 0.085)
-    surface = hsv_to_hex(bg_hue, bg_sat, 0.14)
-    fg = hsv_to_hex(bg_hue, 0.06, 0.92)
-    fg_bright = hsv_to_hex(bg_hue, 0.03, 0.98)
-    muted = hsv_to_hex(bg_hue, 0.10, 0.62)
+    # Softer, lighter surfaces than the first version. Pure near-black feels
+    # heavy; a slightly raised value keeps the glass tint readable while still
+    # letting the wallpaper show through the alpha layers.
+    bg = hsv_to_hex(bg_hue, bg_sat, 0.13)
+    surface = hsv_to_hex(bg_hue, bg_sat, 0.18)
+    fg = hsv_to_hex(bg_hue, 0.05, 0.94)
+    fg_bright = hsv_to_hex(bg_hue, 0.03, 0.99)
+    muted = hsv_to_hex(bg_hue, 0.08, 0.68)
 
     accent_entry = pick_accent(entries)
     accent = hsv_to_hex(
         accent_entry["h"],
-        clamp(accent_entry["s"] * 1.15, 0.58, 0.85),
-        clamp(accent_entry["v"], 0.68, 0.80),
+        clamp(accent_entry["s"], 0.50, 0.72),
+        clamp(accent_entry["v"], 0.74, 0.84),
     )
 
     secondary = pick_secondary(entries, accent_entry["h"])
     if secondary:
         urgent = hsv_to_hex(
             secondary["h"],
-            clamp(secondary["s"], 0.55, 0.80),
-            clamp(secondary["v"], 0.60, 0.75),
+            clamp(secondary["s"], 0.45, 0.65),
+            clamp(secondary["v"], 0.72, 0.82),
         )
     else:
-        urgent = hsv_to_hex(accent_entry["h"] + 0.5, 0.65, 0.65)
+        urgent = hsv_to_hex(accent_entry["h"] + 0.5, 0.52, 0.76)
 
     # Keep text readable even on unusually bright/dark wallpapers.
     if contrast(fg, bg) < 7.0:
@@ -250,7 +253,7 @@ def build_palette(entries: list[dict]) -> tuple[dict[str, str], dict]:
         "accent_nohash": accent.lstrip("#"),
         "accent_rgb": rgb_string(accent),
         "urgent": urgent,
-        "border": f"rgba({rgb_string(accent)}, 0.28)",
+        "border": f"rgba({rgb_string(accent)}, 0.35)",
         "trough": f"rgba({rgb_string(fg)}, 0.22)",
         "accent_alpha": f"rgba({rgb_string(accent)}, 0.18)",
         "accent_name": accent_name(accent_entry["h"]),

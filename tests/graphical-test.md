@@ -96,6 +96,17 @@ All three must name the same image. The Waybar background, accent, mako border,
 Fuzzel colors, Alacritty background and the niri focus ring should match that
 wallpaper.
 
+Glass checks:
+
+- Waybar pills are semi-transparent (`rgba(bg, 0.62)`); the wallpaper is visible
+  through them, but they are not blurred (niri has no layer-shell blur rule).
+- Alacritty is translucent (`opacity = 0.82`) and its background is blurred by
+  the niri window rule:
+  `background-effect { blur true; xray false; }`.
+- Fuzzel and mako backgrounds are translucent as well.
+- Put the terminal over both a dark and a bright wallpaper area and confirm the
+  text remains readable. The clock pill in particular sits over bright areas.
+
 Switch to the next image and wait for the transition:
 
 ```bash

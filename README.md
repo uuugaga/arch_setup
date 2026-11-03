@@ -19,8 +19,8 @@ Verified on 2026-11-03 in the VirtualBox guest `ArchLinux x86_64`:
 - `logs/validate.md`: **100 PASS / 2 WARN / 0 FAIL**
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
-- `logs/theme-test.md`: hourly wallpaper rotation and dynamic colors verified
-  with both supplied wallpapers
+- `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
+  transparency verified with both supplied wallpapers
 - `tests/smoke-test.sh`: 26 PASS / 0 FAIL
 
 The optional `install/50-extras.sh` modules (fcitx5, apps, gaming, zsh) are
@@ -147,6 +147,9 @@ FORCE=1 ./install/40-desktop.sh
   drawer expands leftwards from the right edge instead of off-screen.
 - CPU/RAM remain text modules with the same outer spacing; their content width
   naturally differs from icon-only modules.
+- The three bar pills use `rgba(bg, 0.62)`, a 1px accent border, a 14px radius
+  and a soft shadow. niri does not blur layer-shell panels, so the bar is
+  glass-tinted and semi-transparent but not frosted.
 
 ## Wallpaper and dynamic theme
 
@@ -195,10 +198,27 @@ Theme scope:
 | niri | focus-ring and border active/inactive/urgent colors |
 | GTK / libadwaita | `prefer-dark` + nearest GNOME `accent-color` |
 
-The palette is derived from the wallpaper: a dark background from the dominant
-hue, a near-white tinted foreground, a vivid accent blended from the prominent
-colorful clusters, and a contrasting urgent color. Foreground/background
-contrast is checked (target >= 7:1) and the accent is kept above 3:1.
+The palette is derived from the wallpaper: a soft dark background from the
+dominant hue (raised value, capped saturation), a near-white tinted foreground,
+a vivid but softened accent blended from the prominent colorful clusters, and a
+contrasting urgent color. Foreground/background contrast is checked
+(target >= 7:1) and the accent is kept above 3:1.
+
+Glass / transparency:
+
+| Surface | Setting |
+|---|---|
+| Waybar pills | `rgba(bg, 0.62)` + accent border + soft shadow |
+| Alacritty | `opacity = 0.82` |
+| niri terminal rule | `background-effect { blur true; xray false; }` |
+| Fuzzel | background alpha 0.80 |
+| mako | background alpha 0.87 |
+| GTK apps | opaque Adwaita surfaces with the matching accent color |
+
+The terminal gets a real frosted background because niri supports window blur.
+Waybar is a layer-shell panel; niri has no layer-shell blur rule, so it is
+semi-transparent but not blurred. GTK applications cannot be reliably made
+transparent without a custom theme.
 
 Generated files are **not** edited by hand. The source of truth is
 `dotfiles/theme/templates/`; `theme-from-wallpaper` writes the deployed configs

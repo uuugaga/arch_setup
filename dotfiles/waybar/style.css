@@ -16,10 +16,11 @@ window#waybar {
 .modules-left,
 .modules-center,
 .modules-right {
-  background: rgba(13, 15, 20, 0.88);
-  border: 1px solid rgba(166, 173, 200, 0.20);
-  border-radius: 12px;
+  background: rgba(13, 15, 20, 0.62);
+  border: 1px solid rgba(166, 173, 200, 0.35);
+  border-radius: 14px;
   padding: 0 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
 #custom-launcher,
