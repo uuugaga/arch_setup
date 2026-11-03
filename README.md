@@ -175,13 +175,13 @@ Behaviour:
 - `wallpaper-rotate` discovers the niri Wayland socket itself, so it also works
   from the systemd user timer where `WAYLAND_DISPLAY` may be stale.
 
-Manual commands:
+Manual commands (`~/.local/bin` is not necessarily in the login PATH):
 
 ```bash
-wallpaper-rotate --start       # reapply the current image
-wallpaper-rotate --next        # switch to the next image now
-wallpaper-rotate --theme-only  # regenerate theme without touching awww
-wallpaper-rotate --status      # print index, count and current file
+~/.local/bin/wallpaper-rotate --start       # reapply the current image
+~/.local/bin/wallpaper-rotate --next        # switch to the next image now
+~/.local/bin/wallpaper-rotate --theme-only  # regenerate theme without touching awww
+~/.local/bin/wallpaper-rotate --status      # print index, count and current file
 ```
 
 Theme scope:

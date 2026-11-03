@@ -88,10 +88,9 @@ Expected: `xprop` returns X11 root properties, `xwayland-satellite` and
 export XDG_RUNTIME_DIR=/run/user/1000
 export WAYLAND_DISPLAY=wayland-1
 
-wallpaper-rotate --status
+~/.local/bin/wallpaper-rotate --status
 awww query
-cat ~/.config/arch-niri-setup/current-wallpaper
-```
+cat ~/.config/arch-niri-setup/current-wallpaper```
 
 All three must name the same image. The Waybar background, accent, mako border,
 Fuzzel colors, Alacritty background and the niri focus ring should match that
@@ -100,9 +99,9 @@ wallpaper.
 Switch to the next image and wait for the transition:
 
 ```bash
-wallpaper-rotate --next
+~/.local/bin/wallpaper-rotate --next
 sleep 3
-wallpaper-rotate --status
+~/.local/bin/wallpaper-rotate --status
 awww query
 ```
 
@@ -112,7 +111,7 @@ The wallpaper and every themed surface should change together. Check the timer:
 systemctl --user list-timers wallpaper-rotate.timer
 systemctl --user start wallpaper-rotate.service   # test the real hourly path
 sleep 4
-wallpaper-rotate --status
+~/.local/bin/wallpaper-rotate --status
 awww query
 ```
 
