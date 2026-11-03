@@ -79,6 +79,7 @@ if [[ "${rc}" -eq 2 ]]; then
 elif [[ "${rc}" -ne 0 ]]; then
   die "Failed to deploy niri config (exit ${rc})."
 fi
+ensure_monitor_file
 run niri validate -c "${HOME}/.config/niri/config.kdl"
 
 section "Rendering initial theme"

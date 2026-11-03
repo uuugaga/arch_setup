@@ -16,12 +16,13 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-03 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **101 PASS / 2 WARN / 0 FAIL**
+- `logs/validate.md`: **105 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
   transparency verified with both supplied wallpapers
-- `tests/smoke-test.sh`: 26 PASS / 0 FAIL
+- `logs/display-test.md`: nwg-displays GUI detected niri and the Virtual-1 output
+- `tests/smoke-test.sh`: 27 PASS / 0 FAIL
 
 The optional `install/50-extras.sh` modules:
 
@@ -184,6 +185,63 @@ FORCE=1 ./install/40-desktop.sh
   layer surface spans the full screen width, so a niri layer-rule would blur
   the transparent gaps between the pills as well. Blur is applied to Fuzzel
   and mako, whose layer surfaces are the visible blocks.
+
+## Display scaling and multi-monitor
+
+The VM currently has one output, `Virtual-1`, running at 1280x800 with
+`scale 1.0`. No automatic resolution/scale detection is applied.
+
+`nwg-displays` (official repo, part of the core package set) provides the GUI.
+It detects niri and writes output settings to:
+
+```text
+~/.config/niri/monitor.kdl
+```
+
+`~/.config/niri/config.kdl` includes it:
+
+```kdl
+include "monitor.kdl"
+```
+
+The project creates an empty `monitor.kdl` on first install and **never
+overwrites it** afterwards. Launch the GUI from Fuzzel or a terminal:
+
+```bash
+nwg-displays
+```
+
+The GUI exposes position, scale, resolution, refresh rate and DPMS for each
+output. Multiple monitors appear as separate draggable blocks; applying writes
+`monitor.kdl` and niri reloads it automatically. Niri uses dynamic workspaces,
+so nwg-displays does not assign workspaces to outputs.
+
+Windows-to-niri scale examples:
+
+| Windows setup | niri per-output scale |
+|---|---|
+| 1080p @ 100% | `1.0` |
+| 1440p @ 150% | `1.5` |
+| 4K @ 200% | `2.0` |
+
+Runtime CLI examples:
+
+```bash
+niri msg outputs                       # list output names and modes
+niri msg output Virtual-1 scale 1.5    # temporary scale change
+niri msg output Virtual-1 mode 1920x1200
+niri msg output Virtual-1 position 0 0
+```
+
+Notes:
+
+- `niri msg output` changes are temporary; use nwg-displays (or an `output`
+  block in `monitor.kdl`) to persist them.
+- Fractional scaling (1.25/1.5) works for Wayland-native apps. XWayland apps
+  may look blurry; prefer Wayland-native versions where possible.
+- The VM has only one virtual output, so the GUI was verified with a single
+  `Virtual-1` block. Multi-monitor arrangement uses the same nwg-displays GUI
+  and cannot be physically tested without a second output.
 
 ## Wallpaper and dynamic theme
 

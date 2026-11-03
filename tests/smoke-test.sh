@@ -29,7 +29,7 @@ bad() {
 }
 
 section "Commands"
-for c in niri niri-session waybar fuzzel alacritty mako greetd tuigreet xwayland-satellite nmcli wpctl jq; do
+for c in niri niri-session waybar fuzzel alacritty mako greetd tuigreet xwayland-satellite nmcli wpctl jq nwg-displays; do
   if has_command "${c}"; then
     ok "${c}"
   else

@@ -97,6 +97,11 @@ if [[ -f "${NIRI_DEPLOYED}" ]]; then
   else
     result "niri:marker" WARN "deployed config lacks the managed-by marker"
   fi
+  if grep -qF 'include "monitor.kdl"' "${NIRI_DEPLOYED}" && [[ -f "${HOME}/.config/niri/monitor.kdl" ]]; then
+    result "niri:monitor-include" PASS "nwg-displays output config is included"
+  else
+    result "niri:monitor-include" FAIL "monitor.kdl include or file is missing"
+  fi
 else
   result "niri:validate:deployed" FAIL "missing ${NIRI_DEPLOYED}"
 fi

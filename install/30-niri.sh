@@ -37,6 +37,9 @@ elif [[ "${rc}" -ne 0 ]]; then
   die "Failed to deploy niri config (exit ${rc})."
 fi
 
+section "Ensuring nwg-displays output config"
+ensure_monitor_file
+
 section "Validating deployed niri config"
 run niri validate -c "${NIRI_DEST}"
 

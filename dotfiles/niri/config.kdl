@@ -3,6 +3,9 @@
 // Optional modules (fcitx5, browser bind, flat mouse accel) live in
 // dotfiles/niri/config.full.kdl and are deployed by install/50-extras.sh.
 
+// Output layout written by nwg-displays (scale, position, mode).
+include "monitor.kdl"
+
 input {
     keyboard {
         xkb {

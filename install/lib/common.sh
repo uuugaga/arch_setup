@@ -267,6 +267,19 @@ disable_service_if_enabled() {
   fi
 }
 
+# ensure_monitor_file makes sure the niri include target exists before
+# validating the config. nwg-displays owns the file after the first install;
+# never overwrite it on later runs.
+ensure_monitor_file() {
+  local src="${DOTFILES_DIR}/niri/monitor.kdl"
+  local dest="${HOME}/.config/niri/monitor.kdl"
+  if [[ -e "${dest}" ]]; then
+    log "keeping existing niri monitor layout: ${dest}"
+    return 0
+  fi
+  deploy_file "${src}" "${dest}" 0 644
+}
+
 # parse_jsonc <file> validates JSON with // and /* */ comments stripped.
 parse_jsonc() {
   python3 - "$1" <<'PY'

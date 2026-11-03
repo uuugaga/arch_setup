@@ -155,7 +155,27 @@ Expected: `'prefer-dark'` and the accent name reported in `theme.env`
 (`THEME_ACCENT_NAME`). GTK apps only receive the accent/dark scheme, not a full
 recolor.
 
-## 5. Cleanup
+## 5. Display scaling / multi-monitor
+
+```bash
+export XDG_RUNTIME_DIR=/run/user/1000
+export WAYLAND_DISPLAY=wayland-1
+export NIRI_SOCKET="$(ls /run/user/1000/niri.*.sock | head -n1)"
+
+nwg-displays --version
+niri msg outputs
+```
+
+Expected: nwg-displays reports a version (it detects niri from the environment)
+and `niri msg outputs` lists the connected output(s). Launch `nwg-displays` and
+confirm each output has a block with Position, Scale, Size and Refresh controls.
+Applying writes `~/.config/niri/monitor.kdl` and niri reloads it.
+
+Do not press Apply during a smoke test unless you intend to change the active
+layout. With multiple outputs connected, arrange them in the GUI; niri uses
+dynamic workspaces, so workspace assignment is unavailable.
+
+## 6. Cleanup
 
 ```bash
 export XDG_RUNTIME_DIR=/run/user/1000
@@ -171,7 +191,7 @@ sudo systemctl restart greetd
 
 Expected: tuigreet returns, `pgrep -x niri` is empty.
 
-## 6. Record the result
+## 7. Record the result
 
 Save a short report with:
 

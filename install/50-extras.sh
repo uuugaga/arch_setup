@@ -110,6 +110,7 @@ deploy_full_niri_config() {
     warn "Existing unmanaged niri config kept; extras config not applied."
     return 0
   fi
+  ensure_monitor_file
   niri validate -c "${HOME}/.config/niri/config.kdl"
 
   if [[ -x "${HOME}/.local/bin/theme-from-wallpaper" && -f "${HOME}/.config/arch-niri-setup/current-wallpaper" ]]; then

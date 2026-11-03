@@ -3,6 +3,9 @@
 // Installed by install/50-extras.sh (fcitx5 + browser + flat mouse accel).
 // It supersedes dotfiles/niri/config.kdl when extras are enabled.
 
+// Output layout written by nwg-displays (scale, position, mode).
+include "monitor.kdl"
+
 environment {
     GTK_IM_MODULE "fcitx"
     QT_IM_MODULE "fcitx"

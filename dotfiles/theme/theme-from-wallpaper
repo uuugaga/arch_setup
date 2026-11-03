@@ -25,6 +25,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import tomllib
 from pathlib import Path
 
@@ -366,15 +367,21 @@ def validate_niri(text: str) -> None:
     niri = shutil.which("niri")
     if not niri:
         return
-    tmp = RENDERED_DIR / "niri-check.kdl"
-    atomic_write(tmp, text)
-    result = subprocess.run(
-        [niri, "validate", "-c", str(tmp)],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    tmp.unlink(missing_ok=True)
+    # The niri config may include relative files (e.g. monitor.kdl written by
+    # nwg-displays). Validate in a temp dir that mirrors those includes.
+    niri_dir = XDG_CONFIG / "niri"
+    with tempfile.TemporaryDirectory(prefix="niri-theme-") as tmpdir:
+        tmp = Path(tmpdir) / "config.kdl"
+        tmp.write_text(text, encoding="utf-8")
+        for extra in niri_dir.glob("*.kdl"):
+            if extra.name != "config.kdl":
+                shutil.copy2(extra, Path(tmpdir) / extra.name)
+        result = subprocess.run(
+            [niri, "validate", "-c", str(tmp)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
     if result.returncode != 0:
         raise SystemExit(f"niri rejected the generated config:\n{result.stderr}")
 

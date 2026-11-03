@@ -103,6 +103,25 @@ or re-run `--fcitx`.
   mode / HiDPI scaling blurs the entire framebuffer; semi-transparent surfaces
   also use grayscale antialiasing instead of subpixel AA.
 
+## Display / multi-monitor
+
+- `nwg-displays` is in `CORE_PKGS`; it supports niri, writes
+  `~/.config/niri/monitor.kdl`, and niri includes it via
+  `include "monitor.kdl"`.
+- `ensure_monitor_file` creates an empty monitor layout only when missing.
+  Never overwrite an existing `monitor.kdl`: nwg-displays owns it after first
+  use. Both `config.kdl` templates contain the include.
+- The GUI supports position, scale, resolution, refresh, DPMS and multiple
+  output blocks. Niri uses dynamic workspaces, so nwg-displays cannot assign
+  workspaces to outputs.
+- `niri msg output <name> scale|mode|position` is runtime-only; persist via
+  nwg-displays / monitor.kdl.
+- Fractional scaling can blur XWayland apps; prefer Wayland-native apps.
+- The VM has a single `Virtual-1`; multi-monitor GUI behavior is documented from
+  upstream but cannot be physically tested without a second output.
+- `theme-from-wallpaper` validates niri configs in a temp dir and copies sibling
+  `*.kdl` includes, so theme regeneration must keep `monitor.kdl` available.
+
 ## Optional apps
 
 - `50-extras.sh --apps` installs the repo list first, then AUR packages one at a
