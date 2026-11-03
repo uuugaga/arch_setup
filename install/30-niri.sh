@@ -51,6 +51,17 @@ if [[ "${rc}" -ne 0 ]]; then
   die "Failed to deploy /etc/greetd/config.toml (exit ${rc})."
 fi
 
+section "Quieting the niri-session import-environment warning"
+rc=0
+deploy_system_file \
+  "${DOTFILES_DIR}/systemd/system/greetd.service.d/90-quiet-import.conf" \
+  "/etc/systemd/system/greetd.service.d/90-quiet-import.conf" \
+  1 || rc=$?
+if [[ "${rc}" -ne 0 ]]; then
+  die "Failed to deploy the greetd quiet-session drop-in (exit ${rc})."
+fi
+run sudo -n systemctl daemon-reload
+
 section "Enabling services"
 ensure_service_enabled greetd.service
 for other_dm in sddm.service gdm.service lightdm.service ly.service; do

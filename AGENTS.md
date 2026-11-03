@@ -136,6 +136,12 @@ or re-run `--fcitx`.
   deploy `tests/greetd-autologin.toml`, verify niri + Waybar + Alacritty +
   Fuzzel + mako + XWayland, then restore `dotfiles/greetd/config.toml` and stop
   the test niri user service.
+- Greeter warning: `niri-session` calls `systemctl --user import-environment`
+  without a variable list, and systemd prints a deprecation warning on the
+  greeter VT. `30-niri.sh` deploys
+  `dotfiles/systemd/system/greetd.service.d/90-quiet-import.conf`
+  (`SYSTEMD_LOG_LEVEL=err`). Do not patch `/usr/bin/niri-session`; the drop-in
+  is package-upgrade safe. `90-validate.sh` checks `greetd:quiet-import`.
 
 ## Reporting
 

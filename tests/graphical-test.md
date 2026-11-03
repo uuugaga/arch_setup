@@ -21,6 +21,16 @@ sudo systemctl start greetd
 Expected: tuigreet shows the clock, `Username:` prompt and `niri-session` at
 the bottom. Capture a screenshot.
 
+There must be no red `Calling import-environment without a list of variable
+names is deprecated.` line on the VT. Verify the drop-in:
+
+```bash
+sudo systemctl show greetd.service -p Environment
+grep SYSTEMD_LOG_LEVEL /etc/systemd/system/greetd.service.d/90-quiet-import.conf
+```
+
+Expected: `Environment=SYSTEMD_LOG_LEVEL=err`.
+
 ## 2. niri autologin test (test VM only)
 
 > `tests/greetd-autologin.toml` logs in as `uuugaga` without a password. Never

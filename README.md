@@ -16,7 +16,7 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-03 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **100 PASS / 2 WARN / 0 FAIL**
+- `logs/validate.md`: **101 PASS / 2 WARN / 0 FAIL**
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
@@ -312,6 +312,12 @@ Every step writes a timestamped transcript plus a stable report:
 
 ## Troubleshooting
 
+- A red `Calling import-environment without a list of variable names is
+  deprecated.` line on the greeter VT is a systemd warning from
+  `niri-session`. `30-niri.sh` deploys
+  `/etc/systemd/system/greetd.service.d/90-quiet-import.conf` with
+  `SYSTEMD_LOG_LEVEL=err`, which suppresses the warning for the greeter session
+  while still showing errors.
 - `niri validate -c ~/.config/niri/config.kdl` shows the exact line for syntax
   errors.
 - `journalctl --user -b` (after login) and `journalctl -b -u greetd` show

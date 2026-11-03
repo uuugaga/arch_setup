@@ -208,6 +208,13 @@ else
   result "greetd:greeter-user" FAIL "greeter user missing"
 fi
 
+GREETD_QUIET="/etc/systemd/system/greetd.service.d/90-quiet-import.conf"
+if [[ -f "${GREETD_QUIET}" ]] && grep -q '^Environment=SYSTEMD_LOG_LEVEL=err' "${GREETD_QUIET}"; then
+  result "greetd:quiet-import" PASS "import-environment warning suppressed"
+else
+  result "greetd:quiet-import" WARN "quiet-session drop-in is missing"
+fi
+
 if service_enabled greetd.service; then
   result "systemd:greetd-enabled" PASS "enabled"
 else
