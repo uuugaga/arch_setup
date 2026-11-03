@@ -58,7 +58,7 @@ Expected screenshots:
 
 - Waybar: launcher, workspaces, window title, clock, notifications, CPU/RAM,
   network, Bluetooth, mic, volume. The IME module is hidden until fcitx5 is
-  installed.
+  installed. Hover the volume icon to reveal the slider; move away to collapse.
 - Alacritty window with the shell prompt and focus ring.
 - Fuzzel overlay listing applications.
 - mako notification in the top-right corner.

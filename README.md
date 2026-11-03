@@ -125,6 +125,18 @@ FORCE=1 ./install/40-desktop.sh
   screencast/file-picker support depends on the portal backend available.
 - GPU drivers are delegated to `60-gpu.sh`; the VM uses Mesa + vmwgfx.
 
+## Waybar UI
+
+- Right-side icons are 18px (the rest of the bar stays at 14px).
+- `spacing` is `0`; every module gets the same `padding: 0 7px` and
+  `margin: 4px 4px`. This keeps the gaps equal and lets the hidden IME module
+  collapse to zero width instead of reserving a gap.
+- Volume is a `group/volume` drawer: normally only the speaker icon is shown.
+  Hovering it reveals the slider. `transition-left-to-right` is `true` so the
+  drawer expands leftwards from the right edge instead of off-screen.
+- CPU/RAM remain text modules with the same outer spacing; their content width
+  naturally differs from icon-only modules.
+
 ## VirtualBox 3D acceleration (important)
 
 niri 26.04 **skips software EGL renderers**. On a VirtualBox guest using VMSVGA,

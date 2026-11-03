@@ -25,17 +25,33 @@ window#waybar {
 #custom-launcher,
 #workspaces,
 #window,
-#clock,
+#clock {
+  padding: 0 9px;
+  margin: 4px 4px;
+  color: #a6adc8;
+}
+
+/* Right-side cluster: identical padding and margins around every module so
+   the gaps between icons are visually equal. Icon modules get a fixed
+   minimum box. */
 #custom-notifications,
 #custom-ime,
-#cpu,
-#memory,
 #network,
 #bluetooth,
 #custom-mic,
 #pulseaudio {
-  padding: 0 9px;
-  margin: 4px 2px;
+  font-size: 18px;
+  min-width: 26px;
+  padding: 0 7px;
+  margin: 4px 4px;
+  color: #a6adc8;
+}
+
+#cpu,
+#memory {
+  font-size: 14px;
+  padding: 0 7px;
+  margin: 4px 4px;
   color: #a6adc8;
 }
 
@@ -63,12 +79,6 @@ window#waybar {
   font-weight: 600;
 }
 
-#cpu,
-#memory {
-  color: #a6adc8;
-  font-size: 14px;
-}
-
 #custom-ime {
   color: #a6adc8;
   font-size: 14px;
@@ -89,7 +99,6 @@ window#waybar {
 #custom-mic,
 #pulseaudio {
   color: #a6adc8;
-  font-size: 16px;
 }
 
 #network.disconnected,
@@ -101,9 +110,15 @@ window#waybar {
   color: #a6adc8;
 }
 
-#custom-mic,
-#pulseaudio {
-  padding: 0 4px;
+/* Volume drawer: the icon is always visible; the slider is revealed on hover.
+   The group itself adds no padding so the collapsed icon keeps the same
+   rhythm as the other right-side icons. */
+#group-volume {
+  padding: 0;
+  margin: 4px 4px;
+}
+
+#group-volume #pulseaudio {
   margin: 0;
 }
 
