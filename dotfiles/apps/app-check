@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# managed-by: arch-niri-setup
+# Check the optional common-app set installed by 50-extras.sh --apps.
+set -uo pipefail
+
+MISSING=0
+
+check_cmd() {
+  local name="$1"
+  local cmd="$2"
+  if command -v "${cmd}" >/dev/null 2>&1; then
+    printf '[OK]   %-22s %s\n' "${name}" "$(command -v "${cmd}")"
+  else
+    printf '[MISS] %-22s %s\n' "${name}" "${cmd}"
+    MISSING=$((MISSING + 1))
+  fi
+}
+
+echo "== Browser / communication =="
+check_cmd "Zen Browser" zen-browser
+check_cmd "Discord" discord
+check_cmd "Spotify" spotify-launcher
+check_cmd "Bitwarden" bitwarden-desktop
+check_cmd "qBittorrent" qbittorrent
+check_cmd "Tailscale" tailscale
+
+echo
+echo "== Remote / mail / transfer =="
+check_cmd "Parsec" parsecd
+check_cmd "Thunderbird" thunderbird
+check_cmd "LocalSend" localsend
+
+echo
+echo "== Development / containers =="
+check_cmd "VS Code" code
+check_cmd "Docker" docker
+check_cmd "Docker Compose" docker-compose
+if command -v docker >/dev/null 2>&1 && docker buildx version >/dev/null 2>&1; then
+  printf '[OK]   %-22s %s\n' "Docker Buildx" "$(docker buildx version 2>/dev/null | head -n1)"
+else
+  printf '[MISS] %-22s %s\n' "Docker Buildx" "docker buildx"
+  MISSING=$((MISSING + 1))
+fi
+check_cmd "Lazydocker" lazydocker
+check_cmd "Flatpak" flatpak
+
+echo
+echo "== Media =="
+check_cmd "Tauon Music Box" tauon
+check_cmd "mpv" mpv
+check_cmd "OBS Studio" obs
+check_cmd "imv" imv
+
+echo
+echo "== Services =="
+for svc in docker.service tailscaled.service; do
+  state="$(systemctl is-active "${svc}" 2>/dev/null || true)"
+  enabled="$(systemctl is-enabled "${svc}" 2>/dev/null || true)"
+  printf '%-22s active=%s enabled=%s\n' "${svc}" "${state:-unknown}" "${enabled:-unknown}"
+done
+
+echo
+echo "== Docker group =="
+if id -nG | tr ' ' '\n' | grep -qx docker; then
+  echo "current session is in the docker group"
+else
+  echo "current session is not in the docker group (log out/in after install)"
+fi
+
+echo
+echo "== Flatpak remotes =="
+if command -v flatpak >/dev/null 2>&1; then
+  flatpak remotes 2>/dev/null || true
+fi
+
+echo
+if [[ "${MISSING}" -gt 0 ]]; then
+  echo "Missing commands: ${MISSING}"
+  exit 1
+fi
+echo "All common-app commands found."

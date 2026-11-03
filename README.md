@@ -23,8 +23,12 @@ Verified on 2026-11-03 in the VirtualBox guest `ArchLinux x86_64`:
   transparency verified with both supplied wallpapers
 - `tests/smoke-test.sh`: 26 PASS / 0 FAIL
 
-The optional `install/50-extras.sh` modules (fcitx5, apps, gaming, zsh) are
-implemented and syntax-checked, but were **not** exercised in this VM run.
+The optional `install/50-extras.sh` modules:
+
+- `--apps` is installed and verified on this VM (see `logs/apps-test.md`).
+- `--fcitx`, `--gaming` and `--zsh` are implemented and syntax-checked but were
+  **not** exercised in this VM run.
+
 Wallpaper rotation and theming are part of the core install via `45-theme.sh`.
 
 ## Structure
@@ -48,6 +52,7 @@ dotfiles/
   waybar/             config, style, helper scripts
   theme/              theme-from-wallpaper + generated-config templates
   awww/               wallpaper-rotate
+  apps/               app-check helper
   fuzzel/ mako/ alacritty/ greetd/ fcitx5/ systemd/ zsh/
 tests/
   smoke-test.sh       fast read-only checks
@@ -101,6 +106,31 @@ replaces the niri config with `config.full.kdl`):
 
 `45-theme.sh` already installs the wallpaper engine, so `50-extras.sh --wallpaper`
 is only needed if you want to redeploy its units/scripts manually.
+
+## Common apps (`50-extras.sh --apps`)
+
+Installs the old project's common-app set, using official repositories where
+possible:
+
+| Category | Packages |
+|---|---|
+| Browser / communication | Zen Browser (AUR), Discord, Spotify Launcher, Bitwarden, qBittorrent, Tailscale |
+| Mail / remote / transfer | Thunderbird, Parsec (AUR), LocalSend (AUR) |
+| Development / containers | VS Code (AUR `visual-studio-code-bin`), Docker, Compose, Buildx, Lazydocker, Flatpak |
+| Media / files | Nautilus, mpv, OBS Studio, imv, Tauon Music Box |
+
+Notes:
+
+- Mailspring was removed in favour of **Thunderbird** (the Mailspring AUR build
+  failed against the current Node/V8 in this VM).
+- AUR packages are installed one at a time; a single failure does not block the
+  rest. Rerun `./install/50-extras.sh --apps` after fixing the failure.
+- `docker.service` and `tailscaled.service` are enabled and started. The user is
+  added to the `docker` group; log out/in before using Docker without sudo.
+- Flatpak uses a **per-user** Flathub remote (`flatpak remote-add --user`).
+- Run `~/.local/bin/app-check` to verify the app set.
+- Tailscale still needs `sudo tailscale up` for account login.
+- Spotify Launcher downloads the actual Spotify client on first launch.
 
 ## Safety model
 

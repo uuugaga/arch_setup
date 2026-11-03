@@ -103,6 +103,20 @@ or re-run `--fcitx`.
   mode / HiDPI scaling blurs the entire framebuffer; semi-transparent surfaces
   also use grayscale antialiasing instead of subpixel AA.
 
+## Optional apps
+
+- `50-extras.sh --apps` installs the repo list first, then AUR packages one at a
+  time. A failed AUR build is recorded and the remaining apps continue.
+- Mail is **Thunderbird**; Mailspring was removed because its AUR build failed
+  against the current Node/V8.
+- Docker and Tailscale services are enabled/started. The user is added to the
+  `docker` group (re-login required for the graphical session).
+- Flatpak uses a per-user remote: `flatpak remote-add --user`.
+- `dotfiles/apps/app-check` is deployed to `~/.local/bin/app-check`; use
+  `docker buildx version` for Buildx because it is a CLI plugin, not a PATH
+  binary.
+- Steam belongs to `--gaming`, not `--apps`.
+
 ## Validation protocol
 
 1. `bash -n` every shell script and `python3 -m py_compile` the theme script.

@@ -78,6 +78,21 @@ deploy_or_warn() {
   fi
 }
 
+install_available_repo() {
+  local available=()
+  local p
+  for p in "$@"; do
+    if pkg_available "${p}"; then
+      available+=("${p}")
+    else
+      warn "not available in enabled repos: ${p}"
+    fi
+  done
+  if [[ "${#available[@]}" -gt 0 ]]; then
+    pacman_install "${available[@]}"
+  fi
+}
+
 user_systemd() {
   if [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
     systemctl --user "$@"
@@ -125,16 +140,29 @@ fi
 
 if [[ "${WANT_APPS}" -eq 1 ]]; then
   section "Module: common applications"
-  pacman_install "${EXTRAS_APPS_REPO[@]}"
+  install_available_repo "${EXTRAS_APPS_REPO[@]}"
 
-  if ! has_command paru; then
-    warn "paru missing; skipping AUR apps. Run install/20-paru.sh first."
+  AUR_FAILED=()
+  if has_command paru; then
+    for p in "${EXTRAS_APPS_AUR[@]}"; do
+      if pkg_present "${p}"; then
+        log "already installed: ${p}"
+        continue
+      fi
+      section "AUR app: ${p}"
+      if run paru -S --needed --noconfirm "${p}"; then
+        log "installed: ${p}"
+      else
+        warn "AUR install failed: ${p}"
+        AUR_FAILED+=("${p}")
+      fi
+    done
   else
-    aur_install "${EXTRAS_APPS_AUR[@]}"
+    warn "paru missing; skipping AUR apps. Run install/20-paru.sh first."
   fi
 
   if has_command flatpak; then
-    run flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo || true
+    run flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo || true
   fi
 
   if has_command docker; then
@@ -144,6 +172,22 @@ if [[ "${WANT_APPS}" -eq 1 ]]; then
       warn "Added ${USER} to the docker group. Log out and back in to use docker without sudo."
     fi
   fi
+
+  if has_command tailscale; then
+    ensure_service_enabled tailscaled.service
+    ensure_service_active tailscaled.service
+    info "Tailscale is installed; run 'sudo tailscale up' to log in."
+  fi
+
+  mkdir -p "${HOME}/.local/bin"
+  deploy_or_warn "${DOTFILES_DIR}/apps/app-check" "${HOME}/.local/bin/app-check" 755
+
+  if [[ "${#AUR_FAILED[@]}" -gt 0 ]]; then
+    warn "Some AUR apps failed: ${AUR_FAILED[*]}"
+    warn "Rerun ./install/50-extras.sh --apps after fixing the failure."
+  fi
+
+  info "Run 'app-check' after logging out/in to review the app set."
 fi
 
 if [[ "${WANT_GAMING}" -eq 1 ]]; then
