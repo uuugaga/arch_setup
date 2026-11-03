@@ -65,6 +65,41 @@ for f in \
   [[ -f "${f}" ]] && ok "present: ${f}" || bad "missing: ${f}"
 done
 
+section "Wallpaper / theme"
+if [[ -x "${HOME}/.local/bin/wallpaper-rotate" && -x "${HOME}/.local/bin/theme-from-wallpaper" ]]; then
+  ok "theme scripts executable"
+else
+  bad "theme scripts missing"
+fi
+
+WALLPAPER_COUNT="$(find "${HOME}/Pictures/Wallpapers" -maxdepth 1 -type f \
+  \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
+  2>/dev/null | wc -l)"
+if [[ "${WALLPAPER_COUNT}" -gt 0 ]]; then
+  ok "${WALLPAPER_COUNT} wallpaper(s)"
+else
+  bad "no wallpapers in ~/Pictures/Wallpapers"
+fi
+
+if [[ -f "${HOME}/.config/arch-niri-setup/theme.env" ]]; then
+  ok "theme.env present"
+else
+  bad "theme.env missing"
+fi
+
+if [[ -L "${HOME}/.config/systemd/user/timers.target.wants/wallpaper-rotate.timer" ]]; then
+  ok "wallpaper-rotate.timer enabled"
+else
+  bad "wallpaper-rotate.timer not enabled"
+fi
+
+if [[ -f "${HOME}/.config/arch-niri-setup/current-wallpaper" ]]; then
+  current="$(cat "${HOME}/.config/arch-niri-setup/current-wallpaper" 2>/dev/null || true)"
+  [[ -n "${current}" && -f "${current}" ]] && ok "current wallpaper exists" || bad "current wallpaper missing"
+else
+  bad "current-wallpaper not set"
+fi
+
 section "Services"
 for svc in sshd.service NetworkManager.service; do
   if systemctl is-active -q "${svc}" 2>/dev/null; then

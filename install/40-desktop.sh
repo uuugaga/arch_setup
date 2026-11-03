@@ -57,6 +57,13 @@ deploy_or_warn "${DOTFILES_DIR}/mako/config" "${HOME}/.config/mako/config" 644
 section "Deploying Alacritty"
 deploy_or_warn "${DOTFILES_DIR}/alacritty/alacritty.toml" "${HOME}/.config/alacritty/alacritty.toml" 644
 
+section "Reapplying dynamic theme"
+if [[ -x "${HOME}/.local/bin/theme-from-wallpaper" && -f "${HOME}/.config/arch-niri-setup/current-wallpaper" ]]; then
+  run "${HOME}/.local/bin/theme-from-wallpaper" "$(cat "${HOME}/.config/arch-niri-setup/current-wallpaper")" --no-reload || warn "Theme reapply failed; base configs remain."
+else
+  log "Theme engine not installed yet; using base colors."
+fi
+
 section "Enabling desktop services"
 ensure_service_active NetworkManager.service
 if has_command bluetoothctl; then

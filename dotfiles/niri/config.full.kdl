@@ -56,6 +56,7 @@ prefer-no-csd
 
 spawn-at-startup "waybar"
 spawn-at-startup "mako"
+spawn-at-startup "sh" "-lc" "[ -x \"$HOME/.local/bin/wallpaper-rotate\" ] && \"$HOME/.local/bin/wallpaper-rotate\" --start"
 spawn-at-startup "sh" "-lc" "sleep 1; fcitx5 -d --replace"
 spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
 

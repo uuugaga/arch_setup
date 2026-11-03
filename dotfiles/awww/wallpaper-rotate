@@ -1,35 +1,128 @@
 #!/usr/bin/env bash
 # managed-by: arch-niri-setup
-# Pick a random wallpaper from ~/Pictures/Wallpapers and apply it with awww.
-set -euo pipefail
+#
+# Rotate the wallpaper and regenerate the desktop theme.
+#
+#   wallpaper-rotate --start       apply the current (or first) wallpaper
+#   wallpaper-rotate --next        advance one image, then apply
+#   wallpaper-rotate --theme-only  regenerate theme for the current image
+#                                  without touching awww (safe over SSH)
+#   wallpaper-rotate --status      print the current index and file
+#
+# The hourly systemd user timer calls --next. niri calls --start at login.
+
+set -Eeuo pipefail
 
 WALLPAPER_DIR="${WALLPAPER_DIR:-${HOME}/Pictures/Wallpapers}"
+STATE_DIR="${XDG_STATE_HOME:-${HOME}/.local/state}/arch-niri-setup"
+STATE_FILE="${STATE_DIR}/wallpaper.index"
+THEME_BIN="${HOME}/.local/bin/theme-from-wallpaper"
+MODE="${1:---next}"
+
+# niri's spawn-at-startup and systemd user timers do not always inherit
+# WAYLAND_DISPLAY. Discover the compositor socket so awww works in both cases.
+: "${XDG_RUNTIME_DIR:=/run/user/$(id -u)}"
+export XDG_RUNTIME_DIR
+if [[ -z "${WAYLAND_DISPLAY:-}" || ! -S "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}" ]]; then
+  for candidate in "${XDG_RUNTIME_DIR}"/wayland-*; do
+    [[ -S "${candidate}" ]] || continue
+    case "${candidate}" in
+      *-awww-daemon.sock) continue ;;
+    esac
+    export WAYLAND_DISPLAY="$(basename "${candidate}")"
+    break
+  done
+fi
+
+mkdir -p "${STATE_DIR}" "${HOME}/.cache/awww"
 
 if [[ ! -d "${WALLPAPER_DIR}" ]]; then
-  notify-send "Wallpaper" "Directory not found: ${WALLPAPER_DIR}" 2>/dev/null || true
+  echo "wallpaper-rotate: directory not found: ${WALLPAPER_DIR}" >&2
   exit 1
 fi
 
-shopt -s nullglob
-FILES=(
-  "${WALLPAPER_DIR}"/*.jpg
-  "${WALLPAPER_DIR}"/*.jpeg
-  "${WALLPAPER_DIR}"/*.png
-  "${WALLPAPER_DIR}"/*.webp
+mapfile -d '' FILES < <(
+  find "${WALLPAPER_DIR}" -maxdepth 1 -type f \
+    \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
+    -print0 | LC_ALL=C sort -z
 )
-shopt -u nullglob
 
-if [[ "${#FILES[@]}" -eq 0 ]]; then
-  notify-send "Wallpaper" "No images in ${WALLPAPER_DIR}" 2>/dev/null || true
+COUNT="${#FILES[@]}"
+if [[ "${COUNT}" -eq 0 ]]; then
+  echo "wallpaper-rotate: no images in ${WALLPAPER_DIR}" >&2
   exit 1
 fi
 
-CHOICE="${FILES[RANDOM % ${#FILES[@]}]}"
-
-if ! pgrep -x awww-daemon >/dev/null 2>&1; then
-  awww-daemon >/dev/null 2>&1 &
-  sleep 0.5
+LAST=-1
+if [[ -f "${STATE_FILE}" ]]; then
+  LAST="$(cat "${STATE_FILE}" 2>/dev/null || echo -1)"
+  [[ "${LAST}" =~ ^[0-9]+$ ]] || LAST=-1
 fi
 
-awww img "${CHOICE}" --transition-type any --transition-duration 1
-notify-send "Wallpaper" "$(basename "${CHOICE}")" 2>/dev/null || true
+case "${MODE}" in
+  --start|--theme-only)
+    if [[ "${LAST}" -ge 0 && "${LAST}" -lt "${COUNT}" ]]; then
+      INDEX="${LAST}"
+    else
+      INDEX=0
+    fi
+    ;;
+  --next)
+    INDEX=$(( (LAST + 1) % COUNT ))
+    ;;
+  --status)
+    if [[ "${LAST}" -ge 0 && "${LAST}" -lt "${COUNT}" ]]; then
+      printf 'index=%s count=%s file=%s\n' "${LAST}" "${COUNT}" "${FILES[${LAST}]}"
+    else
+      printf 'index=unset count=%s\n' "${COUNT}"
+    fi
+    exit 0
+    ;;
+  *)
+    echo "usage: wallpaper-rotate [--start|--next|--theme-only|--status]" >&2
+    exit 2
+    ;;
+esac
+
+IMAGE="${FILES[${INDEX}]}"
+RC=0
+
+if [[ "${MODE}" != "--theme-only" ]]; then
+  echo "wallpaper-rotate: xdg=${XDG_RUNTIME_DIR} wayland=${WAYLAND_DISPLAY:-unset} daemon=$(pgrep -x awww-daemon || echo none)"
+
+  if ! pgrep -x awww-daemon >/dev/null 2>&1; then
+    # Detach so the daemon survives this oneshot service / shell.
+    setsid awww-daemon >/dev/null 2>&1 < /dev/null &
+    for _ in {1..20}; do
+      pgrep -x awww-daemon >/dev/null 2>&1 && break
+      sleep 0.25
+    done
+  fi
+
+  if ! awww img "${IMAGE}" \
+      --transition-type any \
+      --transition-duration 1.2 \
+      --transition-fps 60; then
+    echo "wallpaper-rotate: awww failed to apply ${IMAGE}" >&2
+    RC=1
+  fi
+fi
+
+printf '%s\n' "${INDEX}" > "${STATE_FILE}"
+
+if [[ -x "${THEME_BIN}" ]]; then
+  if ! "${THEME_BIN}" "${IMAGE}"; then
+    echo "wallpaper-rotate: theme generation failed for ${IMAGE}" >&2
+    RC=1
+  fi
+else
+  echo "wallpaper-rotate: ${THEME_BIN} not found; theme not updated" >&2
+  RC=1
+fi
+
+if command -v notify-send >/dev/null 2>&1; then
+  notify-send "Wallpaper" "$(basename "${IMAGE}")" 2>/dev/null || true
+fi
+
+printf 'wallpaper-rotate: %s [%s/%s] %s\n' "${MODE}" "$((INDEX + 1))" "${COUNT}" "${IMAGE}"
+exit "${RC}"

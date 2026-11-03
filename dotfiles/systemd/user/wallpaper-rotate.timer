@@ -1,10 +1,11 @@
+# managed-by: arch-niri-setup
+
 [Unit]
-Description=Daily wallpaper rotation
+Description=Hourly wallpaper rotation
 
 [Timer]
-OnBootSec=2min
-OnUnitActiveSec=1h
-Persistent=true
+OnCalendar=hourly
+RandomizedDelaySec=30
 
 [Install]
 WantedBy=timers.target

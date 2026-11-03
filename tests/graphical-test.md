@@ -82,7 +82,53 @@ makoctl list
 Expected: `xprop` returns X11 root properties, `xwayland-satellite` and
 `Xwayland` processes exist, and `makoctl list` shows the notification.
 
-## 4. Cleanup
+## 4. Wallpaper and dynamic theme
+
+```bash
+export XDG_RUNTIME_DIR=/run/user/1000
+export WAYLAND_DISPLAY=wayland-1
+
+wallpaper-rotate --status
+awww query
+cat ~/.config/arch-niri-setup/current-wallpaper
+```
+
+All three must name the same image. The Waybar background, accent, mako border,
+Fuzzel colors, Alacritty background and the niri focus ring should match that
+wallpaper.
+
+Switch to the next image and wait for the transition:
+
+```bash
+wallpaper-rotate --next
+sleep 3
+wallpaper-rotate --status
+awww query
+```
+
+The wallpaper and every themed surface should change together. Check the timer:
+
+```bash
+systemctl --user list-timers wallpaper-rotate.timer
+systemctl --user start wallpaper-rotate.service   # test the real hourly path
+sleep 4
+wallpaper-rotate --status
+awww query
+```
+
+The service must advance exactly one image and leave `current-wallpaper`,
+`theme.env`, the bar colors and the displayed image in sync. Finally:
+
+```bash
+gsettings get org.gnome.desktop.interface color-scheme
+gsettings get org.gnome.desktop.interface accent-color
+```
+
+Expected: `'prefer-dark'` and the accent name reported in `theme.env`
+(`THEME_ACCENT_NAME`). GTK apps only receive the accent/dark scheme, not a full
+recolor.
+
+## 5. Cleanup
 
 ```bash
 export XDG_RUNTIME_DIR=/run/user/1000
@@ -98,7 +144,7 @@ sudo systemctl restart greetd
 
 Expected: tuigreet returns, `pgrep -x niri` is empty.
 
-## 5. Record the result
+## 6. Record the result
 
 Save a short report with:
 

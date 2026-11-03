@@ -96,6 +96,10 @@ deploy_full_niri_config() {
     return 0
   fi
   niri validate -c "${HOME}/.config/niri/config.kdl"
+
+  if [[ -x "${HOME}/.local/bin/theme-from-wallpaper" && -f "${HOME}/.config/arch-niri-setup/current-wallpaper" ]]; then
+    "${HOME}/.local/bin/theme-from-wallpaper" "$(cat "${HOME}/.config/arch-niri-setup/current-wallpaper")" --no-reload || warn "Theme reapply failed."
+  fi
 }
 
 if [[ "${WANT_FCITX}" -eq 1 ]]; then

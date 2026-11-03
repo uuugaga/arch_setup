@@ -16,13 +16,16 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-03 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **89 PASS / 2 WARN / 0 FAIL**
+- `logs/validate.md`: **100 PASS / 2 WARN / 0 FAIL**
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
-- `tests/smoke-test.sh`: 21 PASS / 0 FAIL
+- `logs/theme-test.md`: hourly wallpaper rotation and dynamic colors verified
+  with both supplied wallpapers
+- `tests/smoke-test.sh`: 26 PASS / 0 FAIL
 
-The optional `install/50-extras.sh` modules (fcitx5, awww, apps, gaming, zsh)
-are implemented and syntax-checked, but were **not** exercised in this VM run.
+The optional `install/50-extras.sh` modules (fcitx5, apps, gaming, zsh) are
+implemented and syntax-checked, but were **not** exercised in this VM run.
+Wallpaper rotation and theming are part of the core install via `45-theme.sh`.
 
 ## Structure
 
@@ -33,7 +36,8 @@ install/
   20-paru.sh          build paru as user (makepkg, never root)
   30-niri.sh          niri config + greetd/tuigreet (enable only)
   40-desktop.sh       Waybar/Fuzzel/mako/Alacritty configs + services
-  50-extras.sh        optional: fcitx5, awww, apps, gaming, zsh
+  45-theme.sh         wallpaper rotation + dynamic theme (awww + Pillow)
+  50-extras.sh        optional: fcitx5, apps, gaming, zsh
   60-gpu.sh           Mesa/Vulkan/VA-API per GPU (VM aware)
   90-validate.sh      read-only validation -> logs/validate.md
   lib/common.sh       logging, backups, deploy, package helpers
@@ -42,7 +46,9 @@ config/
 dotfiles/
   niri/               config.kdl (core) and config.full.kdl (extras)
   waybar/             config, style, helper scripts
-  fuzzel/ mako/ alacritty/ greetd/ fcitx5/ awww/ systemd/ zsh/
+  theme/              theme-from-wallpaper + generated-config templates
+  awww/               wallpaper-rotate
+  fuzzel/ mako/ alacritty/ greetd/ fcitx5/ systemd/ zsh/
 tests/
   smoke-test.sh       fast read-only checks
   greetd-autologin.toml  TEST FIXTURE ONLY (autologin for console tests)
@@ -70,6 +76,7 @@ cd arch-niri-setup
 ./install/20-paru.sh
 ./install/30-niri.sh
 ./install/40-desktop.sh
+./install/45-theme.sh
 ./install/60-gpu.sh
 ./install/90-validate.sh
 ./tests/smoke-test.sh
@@ -87,11 +94,13 @@ replaces the niri config with `config.full.kdl`):
 
 ```bash
 ./install/50-extras.sh --fcitx
-./install/50-extras.sh --wallpaper
 ./install/50-extras.sh --apps
 ./install/50-extras.sh --gaming
 ./install/50-extras.sh --zsh
 ```
+
+`45-theme.sh` already installs the wallpaper engine, so `50-extras.sh --wallpaper`
+is only needed if you want to redeploy its units/scripts manually.
 
 ## Safety model
 
@@ -119,6 +128,8 @@ FORCE=1 ./install/40-desktop.sh
 
 - Core: niri, Waybar, Fuzzel, mako, Alacritty, portals, XWayland satellite,
   PipeWire, NetworkManager, BlueZ, greetd + tuigreet, fonts, screenshot tools.
+- Wallpaper rotation: `awww`; palette extraction: `python-pillow`; desktop
+  notifications: `libnotify`.
 - The desktop uses Alacritty. kitty is not installed.
 - `paru` is built from the AUR with `makepkg -si` as the normal user.
 - `xdg-desktop-portal-gnome` and `-gtk` are both installed because niri's
@@ -136,6 +147,65 @@ FORCE=1 ./install/40-desktop.sh
   drawer expands leftwards from the right edge instead of off-screen.
 - CPU/RAM remain text modules with the same outer spacing; their content width
   naturally differs from icon-only modules.
+
+## Wallpaper and dynamic theme
+
+Put wallpapers in `~/Pictures/Wallpapers` on the target machine. The two images
+used for this run live in the host folder `C:\Users\uuugaga\ArchLinux\wallpaper`
+and were copied into the guest. Supported formats: jpg, jpeg, png, webp.
+
+`install/45-theme.sh` installs:
+
+- `awww` (wallpaper daemon and transitions)
+- `python-pillow` (palette extraction)
+- `libnotify` (`notify-send` feedback)
+- `~/.local/bin/wallpaper-rotate`
+- `~/.local/bin/theme-from-wallpaper`
+- templates under `~/.config/arch-niri-setup/templates/`
+- `wallpaper-rotate.timer` (hourly) and `.service`
+
+Behaviour:
+
+- niri starts `wallpaper-rotate --start` at login, which applies the current
+  image and regenerates the theme.
+- `wallpaper-rotate.timer` runs `--next` at the top of every hour
+  (`OnCalendar=hourly`). The index is stored in
+  `~/.local/state/arch-niri-setup/wallpaper.index`; file order is forced with
+  `LC_ALL=C` so the service and an SSH shell always pick the same image.
+- `wallpaper-rotate` discovers the niri Wayland socket itself, so it also works
+  from the systemd user timer where `WAYLAND_DISPLAY` may be stale.
+
+Manual commands:
+
+```bash
+wallpaper-rotate --start       # reapply the current image
+wallpaper-rotate --next        # switch to the next image now
+wallpaper-rotate --theme-only  # regenerate theme without touching awww
+wallpaper-rotate --status      # print index, count and current file
+```
+
+Theme scope:
+
+| Target | How |
+|---|---|
+| Waybar | full generated `style.css` (background, text, accents, slider) |
+| mako | background, text and border colors |
+| Fuzzel | background, text, match, selection and border |
+| Alacritty | background, foreground, cursor and selection |
+| niri | focus-ring and border active/inactive/urgent colors |
+| GTK / libadwaita | `prefer-dark` + nearest GNOME `accent-color` |
+
+The palette is derived from the wallpaper: a dark background from the dominant
+hue, a near-white tinted foreground, a vivid accent blended from the prominent
+colorful clusters, and a contrasting urgent color. Foreground/background
+contrast is checked (target >= 7:1) and the accent is kept above 3:1.
+
+Generated files are **not** edited by hand. The source of truth is
+`dotfiles/theme/templates/`; `theme-from-wallpaper` writes the deployed configs
+and keeps matching copies in `~/.config/arch-niri-setup/rendered/`. GTK
+applications receive the dark scheme and accent color, but their full surface
+colors remain Adwaita dark. The niri "Important Hotkeys" overlay is drawn by
+niri itself and is not themed.
 
 ## VirtualBox 3D acceleration (important)
 
@@ -188,6 +258,8 @@ Every step writes a timestamped transcript plus a stable report:
 
 - `logs/preflight.md`
 - `logs/validate.md`
+- `logs/graphical-test.md`
+- `logs/theme-test.md`
 - `logs/preflight.env`
 - `logs/<step>-<timestamp>.log`
 

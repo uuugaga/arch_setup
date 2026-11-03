@@ -1,6 +1,9 @@
+# managed-by: arch-niri-setup
+
 [Unit]
-Description=Rotate wallpaper from ~/Pictures/Wallpapers
+Description=Rotate wallpaper and regenerate the desktop theme
 
 [Service]
 Type=oneshot
-ExecStart=%h/.local/bin/wallpaper-rotate
+ExecStart=%h/.local/bin/wallpaper-rotate --next
+TimeoutStartSec=45
