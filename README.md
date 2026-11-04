@@ -150,8 +150,9 @@ Notes:
 ## GPU drivers (`60-gpu.sh`)
 
 `60-gpu.sh` detects VMware/VirtualBox, NVIDIA, AMD and Intel from `lspci` and
-installs the matching stack. It assumes the standard Arch `linux` kernel and
-does not install DKMS or multi-kernel variants.
+installs the matching stack. It supports exactly one kernel: the standard Arch
+`linux` package. `linux-lts`, `linux-zen`, `linux-hardened`, DKMS and any
+multi-kernel setup are intentionally unsupported.
 
 | Platform | Packages / behavior |
 |---|---|
@@ -164,7 +165,7 @@ Notes:
 
 - `nvidia-open` supports Turing (RTX 20xx / GTX 16xx) and newer. Pascal,
   Maxwell and Kepler need a legacy out-of-tree driver; the official repos no
-  longer ship the old `nvidia` / `nvidia-lts` packages. `60-gpu.sh` stops with
+  longer ship the old proprietary `nvidia` packages. `60-gpu.sh` stops with
   an error rather than installing an unsupported open module.
 - AMD's `mesa-vdpau` package has been removed from Arch. The supported path is
   VA-API (provided by `mesa`); `vulkan-radeon` provides RADV Vulkan.

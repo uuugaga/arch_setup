@@ -403,7 +403,7 @@ if [[ "${WANT_GAMING}" -eq 1 ]]; then
 
   mapfile -t GAMING_GPU_PKGS < <(gaming_gpu_packages)
   if printf '%s\n' "${GAMING_GPU_PKGS[@]}" | grep -qx 'lib32-nvidia-utils' \
-    && ! pkg_present nvidia-open && ! pkg_present nvidia-open-lts; then
+    && ! pkg_present nvidia-open; then
     warn "NVIDIA kernel modules are not installed yet; run WANT_32BIT=1 ./install/60-gpu.sh."
   fi
   pacman_install "${EXTRAS_GAMING[@]}" "${GAMING_GPU_PKGS[@]}"

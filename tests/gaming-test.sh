@@ -82,7 +82,7 @@ done
 
 section "GPU drivers"
 if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
-  if pkg_present nvidia-open || pkg_present nvidia-open-lts; then
+  if pkg_present nvidia-open; then
     ok "NVIDIA kernel modules installed"
   else
     bad "nvidia-open kernel modules missing"

@@ -250,13 +250,15 @@ or re-run `--fcitx`.
 
 ## GPU drivers
 
-- `install/60-gpu.sh` is the only GPU-package writer. It assumes the standard
-  Arch `linux` kernel; do not add DKMS or multi-kernel branches unless the user
-  explicitly asks. `WANT_32BIT=1` adds 32-bit graphics libraries.
-- NVIDIA: official repos now ship `nvidia-open` / `nvidia-open-lts` only.
-  `nvidia-open` supports Turing (RTX 20xx / GTX 16xx) and newer; Pascal, Maxwell
-  and Kepler need a legacy out-of-tree driver, and `60-gpu.sh` stops with an
-  error instead of installing an unsupported open module. The script installs
+- `install/60-gpu.sh` is the only GPU-package writer. The project supports
+  exactly one kernel: the standard Arch `linux` package. Do not add `linux-lts`,
+  `linux-zen`, `linux-hardened`, DKMS or multi-kernel branches. `WANT_32BIT=1`
+  adds 32-bit graphics libraries.
+- NVIDIA: official repos now ship open modules only; this project uses
+  `nvidia-open` for the standard `linux` kernel. It supports Turing (RTX 20xx /
+  GTX 16xx) and newer; Pascal, Maxwell and Kepler need a legacy out-of-tree
+  driver, and `60-gpu.sh` stops with an error instead of installing an
+  unsupported open module. The script installs
   `nvidia-utils`, `nvidia-settings`, `libva-nvidia-driver`, `vulkan-icd-loader`
   and `libxnvctrl`, deploys the managed `nvidia_drm` options, and rebuilds the
   initramfs. Hybrid systems also get `nvidia-prime` (`prime-run`).

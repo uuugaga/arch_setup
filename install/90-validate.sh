@@ -657,7 +657,7 @@ else
 fi
 
 if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
-  if pkg_present nvidia-open || pkg_present nvidia-open-lts; then
+  if pkg_present nvidia-open; then
     result "gpu:nvidia-module" PASS "nvidia-open kernel modules installed"
   else
     result "gpu:nvidia-module" FAIL "nvidia-open module package missing"

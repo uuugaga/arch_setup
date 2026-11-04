@@ -2,6 +2,8 @@
 # 60-gpu.sh - install Mesa/Vulkan/VA-API drivers for the detected GPU.
 #
 # Supports VirtualBox/VMware guests, NVIDIA, AMD and Intel, including hybrids.
+# Supports exactly one kernel: the standard Arch 'linux' package. Do not add
+# DKMS or linux-lts/zen/hardened branches.
 # WANT_32BIT=1 adds 32-bit libraries (needed by Steam).
 # Does not reboot. NVIDIA modeset is applied on the next boot.
 
@@ -62,16 +64,13 @@ fi
 if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
   section "NVIDIA GPU"
 
-  # This project assumes the standard Arch kernel. The open modules are the
-  # only NVIDIA kernel modules in the current official repositories; legacy
-  # Pascal/Maxwell cards need an out-of-tree driver instead.
-  if pkg_present linux; then
-    NVIDIA_MODULE_PKG=nvidia-open
-  elif pkg_present linux-lts; then
-    NVIDIA_MODULE_PKG=nvidia-open-lts
-  else
-    die "NVIDIA path requires the standard 'linux' kernel package (or linux-lts)."
-  fi
+  # This project supports exactly one kernel: the standard Arch 'linux'
+  # package. The open modules are the only NVIDIA kernel modules in the current
+  # official repositories; legacy Pascal/Maxwell cards need an out-of-tree
+  # driver instead.
+  pkg_present linux \
+    || die "NVIDIA path requires the standard 'linux' kernel package."
+  NVIDIA_MODULE_PKG=nvidia-open
   pkg_available "${NVIDIA_MODULE_PKG}" \
     || die "${NVIDIA_MODULE_PKG} is not available in the enabled repositories; install a legacy NVIDIA driver manually."
 
@@ -140,7 +139,7 @@ fi
 
 if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
   section "Regenerating initramfs for NVIDIA"
-  run sudo -n mkinitcpio -P
+  run sudo -n mkinitcpio -p linux
 fi
 
 section "GPU step complete"
