@@ -16,7 +16,7 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **156 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
+- `logs/validate.md`: **182 PASS / 2 WARN / 0 FAIL** (with an active niri session; logged-out runs add the no-niri warning)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
@@ -25,13 +25,16 @@ Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 - `logs/ime-test.md`: fcitx5 + Chewing English/Chinese switching, Waybar badge
   and a GTK4 end-to-end input test
 - `tests/smoke-test.sh`: 50 PASS / 0 FAIL
+- `tests/gaming-test.sh`: 29 PASS / 0 FAIL
 
 The optional `install/50-extras.sh` modules:
 
 - `--apps` is installed and verified on this VM (see `logs/apps-test.md`).
 - `--fcitx` is installed and verified on this VM (see `logs/ime-test.md`).
-- `--gaming` and `--zsh` are implemented and syntax-checked but were
-  **not** exercised in this VM run.
+- `--gaming` is installed and verified on this VM (see `logs/gaming-test.md`);
+  Vulkan is software-only because the VM has no hardware Vulkan device.
+- `--zsh` is implemented and syntax-checked but was **not** exercised in this
+  VM run.
 
 Wallpaper rotation and theming are part of the core install via `45-theme.sh`.
 
@@ -58,9 +61,11 @@ dotfiles/
   theme/              theme-from-wallpaper + generated-config templates
   awww/               wallpaper-rotate
   apps/               app-check helper
+  gaming/             MangoHud configuration
   fuzzel/ mako/ alacritty/ greetd/ fcitx5/ systemd/ zsh/
 tests/
   smoke-test.sh       fast read-only checks
+  gaming-test.sh      optional Steam/gaming checks
   greetd-autologin.toml  TEST FIXTURE ONLY (autologin for console tests)
   graphical-test.md   graphical console test procedure
 logs/                 generated reports and transcripts
@@ -110,8 +115,10 @@ Optional modules (run after the core steps; `--fcitx` must run after
 ./install/50-extras.sh --zsh
 ```
 
-`45-theme.sh` already installs the wallpaper engine, so `50-extras.sh --wallpaper`
-is only needed if you want to redeploy its units/scripts manually.
+`--gaming` enables `[multilib]` and runs `pacman -Syu` before installing Steam.
+It does not reboot the machine. `45-theme.sh` already installs the wallpaper
+engine, so `50-extras.sh --wallpaper` is only needed if you want to redeploy
+its units/scripts manually.
 
 ## Common apps (`50-extras.sh --apps`)
 
@@ -139,6 +146,72 @@ Notes:
 - Run `~/.local/bin/app-check` to verify the app set.
 - Tailscale still needs `sudo tailscale up` for account login.
 - Spotify Launcher downloads the actual Spotify client on first launch.
+
+## Steam / gaming (`50-extras.sh --gaming`)
+
+Steam is in Arch's `[multilib]` repository. The module enables it
+automatically (with a backup of `/etc/pacman.conf`), runs a full
+`pacman -Syu`, and installs the official-repository gaming stack:
+
+| Category | Packages |
+|---|---|
+| Steam | `steam`, `steam-devices` |
+| 32-bit graphics | `lib32-mesa`, `lib32-vulkan-icd-loader`, `lib32-vulkan-swrast` |
+| 32-bit audio | `lib32-libpulse`, `lib32-alsa-plugins`, `lib32-alsa-lib` |
+| Performance / overlay | `gamemode`, `lib32-gamemode`, `mangohud`, `lib32-mangohud`, `gamescope` |
+| Diagnostics / Proton | `vulkan-tools`, `vulkan-swrast`, `protontricks` |
+| UI font | `ttf-liberation` |
+
+It also deploys `~/.config/MangoHud/MangoHud.conf`, creates
+`~/Games/SteamLibrary`, and writes `~/.config/arch-niri-setup/gaming` so
+`90-validate.sh` can check the module only on machines where it was selected.
+
+First launch:
+
+```bash
+steam
+```
+
+- Log in with your Steam account. The first start downloads the Steam runtime.
+- In **Settings -> Compatibility**, enable Steam Play for all other titles and
+  select a Proton version.
+- In **Settings -> Storage**, add `~/Games/SteamLibrary`.
+- Per-game launch options: `gamemoderun mangohud %command%`.
+- On hardware Vulkan, a fixed 1280x800 fullscreen window can use
+  `gamescope -W 1280 -H 800 -r 60 -f -- %command%`. On this VM gamescope
+  cannot initialize: it rejects lavapipe as "not a valid physical device".
+- Controller udev rules come from `steam-devices`; reconnect the controller
+  after the first install.
+
+### VM limitation
+
+The VirtualBox guest uses `VMSVGA` / `vmwgfx`, which has **no hardware Vulkan
+driver**. `vulkan-swrast` supplies Mesa's `lavapipe` software Vulkan device, so
+Steam and Proton can enumerate a device and start, but modern 3D games will be
+very slow. After the Steam runtime, the disk has about 19 GB free, which is
+enough for the Steam client, Proton and a few small games, not a large
+library.
+
+If the Windows host has a gaming GPU, use **Steam Remote Play** from the host
+instead of running 3D games inside this VM. Real local gaming needs bare metal
+or GPU passthrough.
+
+MangoHud starts and draws its overlay, but `vmwgfx` has no GPU stats and the
+VM exposes no CPU temperature sensor, so those fields are blank/zero. GameMode
+is D-Bus-activated by `gamemoderun`; it is not enabled at boot and logs
+expected cpufreq/polkit warnings in this VM. `gamescope` installs and its help
+works, but its Vulkan backend fails on lavapipe, so do not use it in this VM.
+Steam's CEF login/store UI also renders through lavapipe and can use a lot of
+CPU.
+
+Validation:
+
+```bash
+./install/90-validate.sh
+./tests/smoke-test.sh
+./tests/gaming-test.sh
+vulkaninfo --summary
+```
 
 ## Safety model
 
@@ -176,6 +249,8 @@ FORCE=1 ./install/40-desktop.sh
 - `xdg-desktop-portal-gnome` and `-gtk` are both installed because niri's
   screencast/file-picker support depends on the portal backend available.
 - GPU drivers are delegated to `60-gpu.sh`; the VM uses Mesa + vmwgfx.
+- Gaming is optional and official-repository only (`--gaming`); no AUR gaming
+  packages are required for the base Steam stack.
 
 ## Everyday CLI tools
 

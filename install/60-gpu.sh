@@ -115,6 +115,9 @@ if [[ "${WANT_32BIT}" == "1" ]]; then
   [[ "${HAS_NVIDIA}" -eq 1 ]] && PACMAN32+=(lib32-nvidia-utils)
   [[ "${HAS_AMD}" -eq 1 ]] && PACMAN32+=(lib32-vulkan-radeon)
   [[ "${HAS_INTEL}" -eq 1 ]] && PACMAN32+=(lib32-vulkan-intel)
+  # VMSVGA/vmwgfx has no hardware Vulkan driver. Lavapipe gives 32-bit
+  # applications a software Vulkan device for diagnostics and light use.
+  [[ "${HAS_VMWARE}" -eq 1 ]] && PACMAN32+=(lib32-vulkan-swrast)
   pacman_install "${PACMAN32[@]}"
 fi
 

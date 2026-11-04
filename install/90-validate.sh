@@ -88,6 +88,54 @@ for c in "${CLI_COMMANDS[@]}"; do
   fi
 done
 
+section "Gaming / Steam"
+if [[ -f "${HOME}/.config/arch-niri-setup/gaming" ]]; then
+  if grep -q '^\[multilib\]' /etc/pacman.conf; then
+    result "gaming:multilib" PASS "[multilib] is enabled"
+  else
+    result "gaming:multilib" FAIL "[multilib] is not enabled"
+  fi
+  for p in "${EXTRAS_GAMING[@]}"; do
+    if pkg_present "${p}"; then
+      result "gaming:package:${p}" PASS "$(pkg_version "${p}")"
+    else
+      result "gaming:package:${p}" FAIL "missing"
+    fi
+  done
+  for c in "${GAMING_COMMANDS[@]}"; do
+    if has_command "${c}"; then
+      result "gaming:binary:${c}" PASS "$(command -v "${c}")"
+    else
+      result "gaming:binary:${c}" FAIL "not found in PATH"
+    fi
+  done
+  if has_command vulkaninfo; then
+    VK_SUMMARY="$(vulkaninfo --summary 2>&1 || true)"
+    if grep -qi 'PHYSICAL_DEVICE_TYPE_CPU' <<< "${VK_SUMMARY}" \
+      && ! grep -qiE 'PHYSICAL_DEVICE_TYPE_(DISCRETE_GPU|INTEGRATED_GPU|VIRTUAL_GPU|OTHER)' <<< "${VK_SUMMARY}"; then
+      result "gaming:vulkan" WARN "software Vulkan only (lavapipe); this VM has no hardware Vulkan"
+    elif grep -qi 'deviceName' <<< "${VK_SUMMARY}"; then
+      result "gaming:vulkan" PASS "$(grep -i 'deviceName' <<< "${VK_SUMMARY}" | head -n 1 | sed 's/^[[:space:]]*//')"
+    else
+      result "gaming:vulkan" FAIL "vulkaninfo could not enumerate a device"
+    fi
+  else
+    result "gaming:vulkan" FAIL "vulkaninfo is missing"
+  fi
+  if [[ -f "${HOME}/.config/MangoHud/MangoHud.conf" ]]; then
+    result "gaming:mangohud-config" PASS "MangoHud.conf deployed"
+  else
+    result "gaming:mangohud-config" FAIL "MangoHud.conf missing"
+  fi
+  if [[ -d "${HOME}/Games/SteamLibrary" ]]; then
+    result "gaming:steam-library" PASS "${HOME}/Games/SteamLibrary"
+  else
+    result "gaming:steam-library" WARN "Steam library directory missing"
+  fi
+else
+  log "skip: gaming checks (Steam not installed via --gaming)"
+fi
+
 section "Niri configuration"
 NIRI_REPO="${DOTFILES_DIR}/niri/config.kdl"
 NIRI_DEPLOYED="${HOME}/.config/niri/config.kdl"
@@ -547,7 +595,7 @@ if [[ "${#LOGFILES[@]}" -eq 0 ]]; then
   result "logs:scan" WARN "no prior step logs found"
 else
   ERRORS="$(grep -hiE '\b(error|failed|fatal)\b' "${LOGFILES[@]}" 2>/dev/null \
-    | grep -viE '0 failed|errors=0|error: 0|no error|error_|--error|error-|failed=0|perl-error|Error while writing index|No debugging symbols|error while loading shared libraries: lib.*not found \(ignored\)' \
+    | grep -viE '0 failed|errors=0|error: 0|no error|error_|--error|error-|failed=0|perl-error|libgpg-error|Error while writing index|No debugging symbols|error while loading shared libraries: lib.*not found \(ignored\)' \
     | head -n 5 || true)"
   if [[ -z "${ERRORS}" ]]; then
     result "logs:scan" PASS "no error patterns in ${#LOGFILES[@]} recent log(s)"

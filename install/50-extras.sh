@@ -180,6 +180,56 @@ install_available_repo() {
   fi
 }
 
+# Steam is a [multilib] package. Enable the repository idempotently and do a
+# full -Syu the first time, because a partial -Sy would leave the system in an
+# unsupported state. The pacman.conf edit is backed up first.
+enable_multilib() {
+  if grep -q '^\[multilib\]' /etc/pacman.conf; then
+    log "[multilib] already enabled"
+    if [[ ! -f /var/lib/pacman/sync/multilib.db ]]; then
+      warn "[multilib] is enabled but its sync database is missing; running pacman -Syu"
+      pacman_upgrade
+    fi
+    return 0
+  fi
+
+  section "Enabling [multilib]"
+  backup_system_file /etc/pacman.conf
+  sudo -n /usr/bin/python3 - <<'PY'
+from pathlib import Path
+
+path = Path("/etc/pacman.conf")
+lines = path.read_text(encoding="utf-8").splitlines()
+out = []
+inside = False
+enabled = False
+for line in lines:
+    stripped = line.strip()
+    if stripped == "#[multilib]":
+        out.append("[multilib]")
+        inside = True
+        enabled = True
+        continue
+    if inside and stripped == "#Include = /etc/pacman.d/mirrorlist":
+        out.append("Include = /etc/pacman.d/mirrorlist")
+        inside = False
+        continue
+    out.append(line)
+if not enabled:
+    raise SystemExit("could not find the commented [multilib] block")
+path.write_text("\n".join(out) + "\n", encoding="utf-8")
+PY
+
+  if ! grep -q '^\[multilib\]' /etc/pacman.conf; then
+    die "Failed to enable [multilib] in /etc/pacman.conf"
+  fi
+  if ! sed -n '/^\[multilib\]/,/^$/p' /etc/pacman.conf \
+    | grep -q '^Include = /etc/pacman.d/mirrorlist$'; then
+    die "[multilib] is enabled but its Include line is missing"
+  fi
+  pacman_upgrade
+}
+
 user_systemd() {
   if [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
     systemctl --user "$@"
@@ -327,12 +377,29 @@ fi
 
 if [[ "${WANT_GAMING}" -eq 1 ]]; then
   section "Module: Steam / gaming"
-  if ! grep -q '^\[multilib\]' /etc/pacman.conf; then
-    warn "The [multilib] repository is not enabled in /etc/pacman.conf."
-    warn "Enable it, run 'sudo pacman -Syu', then rerun --gaming."
-    die "Cannot install Steam without multilib."
-  fi
+  enable_multilib
   pacman_install "${EXTRAS_GAMING[@]}"
+
+  mkdir -p \
+    "${HOME}/.config/MangoHud" \
+    "${HOME}/Games/SteamLibrary" \
+    "${HOME}/.config/arch-niri-setup"
+  deploy_or_warn "${DOTFILES_DIR}/gaming/MangoHud.conf" "${HOME}/.config/MangoHud/MangoHud.conf" 644
+  printf 'installed=%s\n' "$(date -Iseconds)" > "${HOME}/.config/arch-niri-setup/gaming"
+
+  info "Steam library directory: ${HOME}/Games/SteamLibrary"
+  info "Add it in Steam: Settings -> Storage -> Add Drive."
+  info "First launch downloads the Steam runtime and requires your account login."
+  info "Suggested per-game launch options: gamemoderun mangohud %command%"
+  if has_command vulkaninfo; then
+    VK_SUMMARY="$(vulkaninfo --summary 2>&1 || true)"
+    if grep -qi 'PHYSICAL_DEVICE_TYPE_CPU' <<< "${VK_SUMMARY}" \
+      && ! grep -qiE 'PHYSICAL_DEVICE_TYPE_(DISCRETE_GPU|INTEGRATED_GPU|VIRTUAL_GPU|OTHER)' <<< "${VK_SUMMARY}"; then
+      warn "Vulkan is software-only (lavapipe). Proton games will be slow; use Steam Remote Play for real 3D games."
+    elif [[ -z "${VK_SUMMARY}" ]]; then
+      warn "vulkaninfo produced no output; run it again inside the graphical session."
+    fi
+  fi
   warn "For NVIDIA 32-bit drivers run: WANT_32BIT=1 ./install/60-gpu.sh"
 fi
 

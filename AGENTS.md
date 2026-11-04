@@ -242,6 +242,43 @@ or re-run `--fcitx`.
   binary.
 - Steam belongs to `--gaming`, not `--apps`.
 
+## Steam / gaming
+
+- `50-extras.sh --gaming` is official-repository only. It enables `[multilib]`
+  with a backup of `/etc/pacman.conf`, runs `pacman -Syu`, then installs
+  `EXTRAS_GAMING`.
+- Enabling multilib requires a full `-Syu`; do not replace it with a partial
+  `-Sy`. Do not reboot after install. Kernel/package updates take effect on the
+  next user-approved boot.
+- `GAMING_COMMANDS` must stay in sync with `EXTRAS_GAMING`; `steam-devices` is a
+  udev-rules package with no command, so it is package-only.
+- The module writes `~/.config/arch-niri-setup/gaming`, deploys
+  `dotfiles/gaming/MangoHud.conf`, and creates `~/Games/SteamLibrary`.
+  `90-validate.sh` checks gaming only when that marker exists, so a machine
+  without Steam still passes.
+- `tests/gaming-test.sh` is the optional read-only test. Keep it separate from
+  `tests/smoke-test.sh`; core smoke must not fail when gaming is not installed.
+- This VM has **no hardware Vulkan** (`VMSVGA`/`vmwgfx`). `vulkan-swrast` and
+  `lib32-vulkan-swrast` provide Mesa lavapipe only. Never claim Proton/3A games
+  are playable from `vulkaninfo` output alone.
+- MangoHud draws on `vmwgfx`, but GPU stats and CPU temperature are unavailable
+  in this VM. Treat blank/zero fields as expected, not a failure.
+- `gamescope --help` works, but the real backend fails on lavapipe with
+  "not a valid physical device". Do not suggest gamescope as a working wrapper
+  in this VM; it is for hardware Vulkan only.
+- Leave `gamemoded.service` disabled at boot. `gamemoderun` D-Bus-activates it
+  on demand; in this VM it logs expected cpufreq/polkit errors but still runs.
+- `steam` is XWayland; `xwayland-satellite` must be running. The login window
+  reports app ID `steam` and niri floats it automatically, so no window rule is
+  needed. Re-check with `niri msg windows` if a future Steam version changes
+  this.
+- First launch needs the user's Steam login and Steam Guard. Do not automate or
+  store credentials. A GUI test may open the login window and screenshot it,
+  then close Steam.
+- Do not add AUR gaming packages (`lutris` is official, but Heroic, ProtonUp-Qt,
+  vkBasalt, Bottles and Faugus are AUR) to `EXTRAS_GAMING`. If a later scope
+  adds them, use the `--apps`-style AUR path and keep repo packages first.
+
 ## Validation protocol
 
 1. `bash -n` every shell script and `python3 -m py_compile` the theme script.
