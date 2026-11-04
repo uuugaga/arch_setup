@@ -72,6 +72,22 @@ for p in "${CORE_PKGS[@]}"; do
   fi
 done
 
+section "CLI tool checks"
+for p in "${CLI_PKGS[@]}"; do
+  if pkg_present "${p}"; then
+    result "cli:package:${p}" PASS "$(pkg_version "${p}")"
+  else
+    result "cli:package:${p}" FAIL "missing"
+  fi
+done
+for c in "${CLI_COMMANDS[@]}"; do
+  if has_command "${c}"; then
+    result "cli:binary:${c}" PASS "$(command -v "${c}")"
+  else
+    result "cli:binary:${c}" FAIL "not found in PATH"
+  fi
+done
+
 section "Niri configuration"
 NIRI_REPO="${DOTFILES_DIR}/niri/config.kdl"
 NIRI_DEPLOYED="${HOME}/.config/niri/config.kdl"

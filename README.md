@@ -16,7 +16,7 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **130 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
+- `logs/validate.md`: **156 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
@@ -24,7 +24,7 @@ Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 - `logs/display-test.md`: nwg-displays GUI detected niri and the Virtual-1 output
 - `logs/ime-test.md`: fcitx5 + Chewing English/Chinese switching, Waybar badge
   and a GTK4 end-to-end input test
-- `tests/smoke-test.sh`: 37 PASS / 0 FAIL
+- `tests/smoke-test.sh`: 50 PASS / 0 FAIL
 
 The optional `install/50-extras.sh` modules:
 
@@ -166,6 +166,9 @@ FORCE=1 ./install/40-desktop.sh
 
 - Core: niri, Waybar, Fuzzel, mako, Alacritty, portals, XWayland satellite,
   PipeWire, NetworkManager, BlueZ, greetd + tuigreet, fonts, screenshot tools.
+- Everyday CLI tools (installed with the core set): `less`, `vim`, `nano`,
+  `htop`, `btop`, `fastfetch`, `tree`, `wget`, `unzip`, `zip`, `tmux`, `zsh`,
+  `cmake`.
 - Wallpaper rotation: `awww`; palette extraction: `python-pillow`; desktop
   notifications: `libnotify`.
 - The desktop uses Alacritty. kitty is not installed.
@@ -173,6 +176,27 @@ FORCE=1 ./install/40-desktop.sh
 - `xdg-desktop-portal-gnome` and `-gtk` are both installed because niri's
   screencast/file-picker support depends on the portal backend available.
 - GPU drivers are delegated to `60-gpu.sh`; the VM uses Mesa + vmwgfx.
+
+## Everyday CLI tools
+
+`10-packages.sh` installs these in the same pacman transaction as the core
+desktop packages:
+
+| Category | Tools |
+|---|---|
+| Pager / editor | `less`, `vim`, `nano` |
+| Monitoring | `htop`, `btop`, `fastfetch` |
+| Files / archives | `tree`, `unzip`, `zip` |
+| Network / sessions | `wget`, `tmux` |
+| Shell | `zsh` (installed, **not** made the default) |
+| Build | `cmake` |
+
+They are listed separately from `CORE_PKGS` in `config/packages.conf` as
+`CLI_PKGS`, so the desktop package set stays minimal. `90-validate.sh` checks
+both the package and the command for each entry. `zsh` is available as
+`/usr/bin/zsh`; the login shell remains Bash unless you change it yourself with
+`chsh -s /usr/bin/zsh`. `50-extras.sh --zsh` additionally installs Starship and
+the zsh plugins and deploys the sample `~/.zshrc`.
 
 ## Waybar UI
 

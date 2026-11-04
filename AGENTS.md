@@ -27,7 +27,8 @@ folder is user history: **do not modify or delete it** unless explicitly asked.
 
 - `install/00-preflight.sh` - read-only; writes `logs/preflight.md` and
   `logs/preflight.env`.
-- `install/10-packages.sh` - core repo packages from `config/packages.conf`.
+- `install/10-packages.sh` - core + everyday CLI repo packages from
+  `config/packages.conf`.
 - `install/20-paru.sh` - user-owned paru build in `~/build/paru`.
 - `install/30-niri.sh` - niri config, greetd/tuigreet config, enable greetd.
 - `install/40-desktop.sh` - Waybar/Fuzzel/mako/Alacritty, services.
@@ -49,6 +50,23 @@ Theme source files:
 - `dotfiles/systemd/user/wallpaper-rotate.{service,timer}` - hourly rotation.
 - `dotfiles/fcitx5/` - English/Chewing profile, `ime-toggle`, notification
   config.
+
+## CLI tools
+
+- `config/packages.conf` keeps `CLI_PKGS` separate from `CORE_PKGS`; both are
+  installed by `10-packages.sh` in one pacman transaction. The current set is
+  `less`, `vim`, `nano`, `htop`, `btop`, `fastfetch`, `tree`, `wget`, `unzip`,
+  `zip`, `tmux`, `zsh`, `cmake`.
+- Keep `CLI_COMMANDS` in sync with `CLI_PKGS`. `90-validate.sh` and
+  `tests/smoke-test.sh` use them to check both packages and PATH commands.
+- `zsh` is installed as an alternative shell but **not** made the default and
+  no zshrc is deployed by `10-packages.sh`. `50-extras.sh --zsh` is the
+  optional module for Starship, zsh plugins and the sample `~/.zshrc`. Do not
+  run `chsh` without asking the user.
+- These are official-repository packages; do not add AUR CLI tools to
+  `CLI_PKGS`. Use the extras/AUR path if a tool is AUR-only.
+- `man-db` is not part of the set; `less` alone does not provide `man`. Add it
+  only if the user asks.
 
 ## Ordering
 

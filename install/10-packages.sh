@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 10-packages.sh - install core official-repository packages.
+# 10-packages.sh - install core and everyday CLI official-repository packages.
 #
 # Idempotent: pacman --needed skips what is already installed.
 # Set SKIP_UPGRADE=1 to avoid the full system upgrade on repeated runs.
@@ -25,11 +25,23 @@ else
   pacman_upgrade
 fi
 
-pacman_install "${CORE_PKGS[@]}"
+pacman_install "${CORE_PKGS[@]}" "${CLI_PKGS[@]}"
 
 section "Verifying core packages"
 MISSING=()
 for p in "${CORE_PKGS[@]}"; do
+  if pkg_present "${p}"; then
+    v="$(pkg_version "${p}")"
+    [[ -n "${v}" ]] || v="group"
+    log "ok: ${p} ${v}"
+  else
+    err "missing: ${p}"
+    MISSING+=("${p}")
+  fi
+done
+
+section "Verifying CLI packages"
+for p in "${CLI_PKGS[@]}"; do
   if pkg_present "${p}"; then
     v="$(pkg_version "${p}")"
     [[ -n "${v}" ]] || v="group"
@@ -46,7 +58,7 @@ fi
 
 section "Verifying required commands"
 MISSING_CMDS=()
-for c in "${REQUIRED_COMMANDS[@]}"; do
+for c in "${REQUIRED_COMMANDS[@]}" "${CLI_COMMANDS[@]}"; do
   if has_command "${c}"; then
     log "ok: ${c} -> $(command -v "${c}")"
   else
@@ -59,5 +71,5 @@ if [[ "${#MISSING_CMDS[@]}" -gt 0 ]]; then
   die "Required commands missing: ${MISSING_CMDS[*]}"
 fi
 
-section "Core package install complete"
-info "Installed/verified ${#CORE_PKGS[@]} package entries."
+section "Package install complete"
+info "Installed/verified ${#CORE_PKGS[@]} core + ${#CLI_PKGS[@]} CLI package entries."
