@@ -63,6 +63,12 @@ Theme source files:
   no zshrc is deployed by `10-packages.sh`. `50-extras.sh --zsh` is the
   optional module for Starship, zsh plugins and the sample `~/.zshrc`. Do not
   run `chsh` without asking the user.
+- The sample `dotfiles/zsh/zshrc` must keep `compinit` and put
+  `/usr/share/zsh/plugins/zsh-completions` on `fpath`; without both, the
+  installed completion package does nothing. Source
+  `zsh-syntax-highlighting` **last** so it wraps the ZLE widgets.
+- `zsh-autosuggestions` and `zsh-syntax-highlighting` are interactive-only;
+  test with `zsh -ic`, not just `zsh -c`.
 - These are official-repository packages; do not add AUR CLI tools to
   `CLI_PKGS`. Use the extras/AUR path if a tool is AUR-only.
 - `man-db` is not part of the set; `less` alone does not provide `man`. Add it

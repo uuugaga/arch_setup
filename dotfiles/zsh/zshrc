@@ -1,11 +1,16 @@
 # managed-by: arch-niri-setup
 
+# Completion. zsh-completions ships its functions outside the default fpath,
+# and compinit must run before the interactive plugins wrap completion widgets.
+fpath=(/usr/share/zsh/plugins/zsh-completions $fpath)
+autoload -Uz compinit
+compinit
+
 # Starship prompt.
 eval "$(starship init zsh)"
 
-# Plugins from the official repositories.
+# Autosuggestions from the official repositories.
 source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
-source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 
 HISTFILE=~/.zsh_history
 HISTSIZE=50000
@@ -19,3 +24,6 @@ alias paci='sudo pacman -S'
 alias pacu='sudo pacman -Syu'
 alias paru-update='paru -Syu'
 alias paru-clean='paru -Sc'
+
+# Syntax highlighting must be sourced last; it wraps the ZLE widgets above.
+source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh

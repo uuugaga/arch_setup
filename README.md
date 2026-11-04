@@ -16,7 +16,7 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **182 PASS / 2 WARN / 0 FAIL** (with an active niri session; logged-out runs add the no-niri warning)
+- `logs/validate.md`: **183 PASS / 2 WARN / 0 FAIL** (with an active niri session; logged-out runs add the no-niri warning)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
@@ -33,8 +33,8 @@ The optional `install/50-extras.sh` modules:
 - `--fcitx` is installed and verified on this VM (see `logs/ime-test.md`).
 - `--gaming` is installed and verified on this VM (see `logs/gaming-test.md`);
   Vulkan is software-only because the VM has no hardware Vulkan device.
-- `--zsh` is implemented and syntax-checked but was **not** exercised in this
-  VM run.
+- `--zsh` is installed and verified on this VM (see `logs/zsh-test.md`). The
+  login shell remains Bash; only the optional zsh environment was deployed.
 
 Wallpaper rotation and theming are part of the core install via `45-theme.sh`.
 
@@ -238,7 +238,8 @@ FORCE=1 ./install/40-desktop.sh
 ## Package policy
 
 - Core: niri, Waybar, Fuzzel, mako, Alacritty, portals, XWayland satellite,
-  PipeWire, NetworkManager, BlueZ, greetd + tuigreet, fonts, screenshot tools.
+  PipeWire, NetworkManager, BlueZ, greetd + tuigreet, Noto fonts (including CJK
+  and color emoji), screenshot tools.
 - Everyday CLI tools (installed with the core set): `less`, `vim`, `nano`,
   `htop`, `btop`, `fastfetch`, `tree`, `wget`, `unzip`, `zip`, `tmux`, `zsh`,
   `cmake`.
@@ -271,7 +272,10 @@ They are listed separately from `CORE_PKGS` in `config/packages.conf` as
 both the package and the command for each entry. `zsh` is available as
 `/usr/bin/zsh`; the login shell remains Bash unless you change it yourself with
 `chsh -s /usr/bin/zsh`. `50-extras.sh --zsh` additionally installs Starship and
-the zsh plugins and deploys the sample `~/.zshrc`.
+the zsh plugins and deploys the sample `~/.zshrc`. The sample runs `compinit`
+with `zsh-completions` on `fpath`, loads autosuggestions, and sources
+`zsh-syntax-highlighting` last so its ZLE wrappers stay active. It does not run
+`chsh`; changing the login shell remains a manual, explicit choice.
 
 ## Waybar UI
 
