@@ -220,6 +220,14 @@ if pkg_present fcitx5; then
   else
     result "ime:indicator" FAIL "missing executable ${IME_SCRIPT}"
   fi
+
+  IME_EN_COLOR="$(sed -n '/^#custom-ime\.en[[:space:]]*{/,/}/p' "${WAYBAR_STYLE}" 2>/dev/null | grep -m1 -o 'color:[^;]*' | tr -d ' ')"
+  IME_ZH_COLOR="$(sed -n '/^#custom-ime\.zh[[:space:]]*{/,/}/p' "${WAYBAR_STYLE}" 2>/dev/null | grep -m1 -o 'color:[^;]*' | tr -d ' ')"
+  if [[ -n "${IME_EN_COLOR}" && "${IME_EN_COLOR}" == "${IME_ZH_COLOR}" ]]; then
+    result "ime:colors" PASS "English and Chinese use the same color (${IME_EN_COLOR#color:})"
+  else
+    result "ime:colors" FAIL "IME colors differ: en=${IME_EN_COLOR:-missing} zh=${IME_ZH_COLOR:-missing}"
+  fi
 else
   result "ime:packages" WARN "fcitx5 is not installed (optional 50-extras.sh --fcitx)"
 fi

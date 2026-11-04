@@ -85,27 +85,27 @@ window#waybar {
    identical visual size and the module never shifts the bar. */
 #custom-ime {
   font-family: "Noto Sans CJK TC", "JetBrainsMono Nerd Font", sans-serif;
-  font-size: 15px;
-  font-weight: 600;
-  min-width: 20px;
-  min-height: 20px;
+  font-size: 16px;
+  font-weight: 700;
+  min-width: 22px;
+  min-height: 22px;
   padding: 0 5px;
   margin: 4px 5px;
-  border-radius: 7px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.07);
-  color: {{fg}};
+  color: #ffffff;
 }
 
 #custom-ime.en {
-  color: {{fg}};
+  color: #ffffff;
 }
 
 #custom-ime.zh {
-  color: {{accent}};
+  color: #ffffff;
 }
 
 #custom-ime.other {
-  color: {{fg}};
+  color: #ffffff;
 }
 
 /* Hide the IME indicator until fcitx5 is installed by 50-extras.sh. */

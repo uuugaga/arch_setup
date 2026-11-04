@@ -169,9 +169,10 @@ or re-run `--fcitx`.
   Do not add `-o`/`-t` loops; they do nothing at state 0. The actual IM can lag
   the badge by up to the Waybar poll interval (~1s).
 - The Waybar badge must stay visually identical in both states: one CJK glyph
-  (`英` / `中`), same `Noto Sans CJK TC` font, same 15px size, fixed 20px
+  (`英` / `中`), same `Noto Sans CJK TC` font, same 16px bold size, same pure
+  white (`#ffffff`; **not** the accent for `中`), fixed 22px
   min-width/min-height and the same rounded background. Do not change it to
-  `EN`/`ZH`, `EN`/`中`, or use different font sizes.
+  `EN`/`ZH`, `EN`/`中`, or use different font sizes/colors.
 - `ime-status.sh` polls every second. fcitx5 reports an empty name when no text
   field is focused, so the script caches the last non-empty IM in
   `~/.cache/arch-niri-setup/ime-last`. A fresh session has no cache and falls

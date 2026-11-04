@@ -16,7 +16,7 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **127 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
+- `logs/validate.md`: **128 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
@@ -177,7 +177,7 @@ FORCE=1 ./install/40-desktop.sh
 ## Waybar UI
 
 - Right-side icons are 18px (the rest of the bar stays at 14px). The IME badge
-  is an intentional exception: a 15px CJK glyph inside a fixed 20px box.
+  is an intentional exception: a 16px bold CJK glyph inside a fixed 22px box.
 - `spacing` is `0`; every module gets the same `padding: 0 7px` and
   `margin: 4px 4px`. This keeps the gaps equal and lets the hidden IME module
   collapse to zero width instead of reserving a gap.
@@ -243,10 +243,11 @@ language switch. The project deploys `~/.local/bin/ime-toggle`, which uses
 ### Equal-size indicator
 
 The badge deliberately uses two single CJK characters, **英** and **中**, from
-the same font (`Noto Sans CJK TC`) at the same size. It also has a fixed
-minimum 20×20 box with 5px side padding and a rounded background. This
-guarantees both states have the same visual size; `EN`/`ZH`, `EN`/`中`, or
-mixed Latin/CJK labels do not.
+the same font (`Noto Sans CJK TC`) at the same 16px bold size. Both use pure
+white (`#ffffff`); `中` is **not** tinted with the accent. It also has a fixed
+minimum 22×22 box with 5px side padding and a rounded background. This
+guarantees both states have the same visual size and color; `EN`/`ZH`,
+`EN`/`中`, or mixed Latin/CJK labels do not.
 
 `fcitx5-remote -n` returns an empty name when no text field is focused (state
 0). `ime-status.sh` caches the last non-empty state in
