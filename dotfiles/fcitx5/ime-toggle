@@ -4,30 +4,51 @@
 #
 # `fcitx5-remote -t` only toggles fcitx5's active/inactive state, not the input
 # method. `-s <im>` is the reliable way to switch between keyboard-us and
-# chewing. When no text field is focused, fcitx5 reports an empty name; use the
-# cache written by ime-status.sh, or assume English and switch to Chinese.
+# chewing.
+#
+# fcitx5 has no input context when no text field is focused (state 0). In that
+# case `-s` is a no-op, so queue the target in ime-pending and let
+# ime-status.sh apply it as soon as a text field gains focus. The badge uses
+# the cache, so it switches immediately even while the queue is pending.
 set -euo pipefail
 
 if ! command -v fcitx5-remote >/dev/null 2>&1; then
   exit 0
 fi
+fcitx5-remote --check >/dev/null 2>&1 || exit 0
 
-name="$(fcitx5-remote -n 2>/dev/null || true)"
+cache_dir="${XDG_CACHE_HOME:-${HOME}/.cache}/arch-niri-setup"
+cache_file="${cache_dir}/ime-last"
+pending_file="${cache_dir}/ime-pending"
+
+current="$(fcitx5-remote -n 2>/dev/null || true)"
+name="${current}"
 
 if [[ -z "${name}" ]]; then
-  cache="${XDG_CACHE_HOME:-${HOME}/.cache}/arch-niri-setup/ime-last"
-  name="$(head -n1 "${cache}" 2>/dev/null || true)"
+  name="$(head -n1 "${cache_file}" 2>/dev/null || true)"
 fi
 
 if [[ -z "${name}" ]]; then
-  exec fcitx5-remote -s chewing
+  target="chewing"
+else
+  case "${name}" in
+    keyboard-*)
+      target="chewing"
+      ;;
+    *)
+      target="keyboard-us"
+      ;;
+  esac
 fi
 
-case "${name}" in
-  keyboard-*)
-    exec fcitx5-remote -s chewing
-    ;;
-  *)
-    exec fcitx5-remote -s keyboard-us
-    ;;
-esac
+mkdir -p "${cache_dir}"
+printf '%s\n' "${target}" > "${cache_file}"
+
+if [[ -z "${current}" ]]; then
+  # No focused text field: queue for the next input context.
+  printf '%s\n' "${target}" > "${pending_file}"
+  exit 0
+fi
+
+rm -f "${pending_file}"
+exec fcitx5-remote -s "${target}"

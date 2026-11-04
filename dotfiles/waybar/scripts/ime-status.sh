@@ -15,6 +15,7 @@ set -euo pipefail
 
 CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/arch-niri-setup"
 CACHE_FILE="${CACHE_DIR}/ime-last"
+PENDING_FILE="${CACHE_DIR}/ime-pending"
 
 missing() {
   printf '{"text":"","tooltip":"%s","class":"missing"}\n' "$1"
@@ -27,6 +28,20 @@ fcitx5-remote --check >/dev/null 2>&1 \
   || missing "fcitx5 is not running"
 
 name="$(fcitx5-remote -n 2>/dev/null || true)"
+
+# A click on the badge while no text field was focused queued the target. Apply
+# it now that fcitx5 has an input context; `-s` is a no-op at state 0.
+if [[ -n "${name}" && -s "${PENDING_FILE}" ]]; then
+  target="$(head -n1 "${PENDING_FILE}" 2>/dev/null || true)"
+  if [[ -n "${target}" && "${target}" != "${name}" ]]; then
+    fcitx5-remote -s "${target}" >/dev/null 2>&1 || true
+    updated="$(fcitx5-remote -n 2>/dev/null || true)"
+    if [[ -n "${updated}" ]]; then
+      name="${updated}"
+    fi
+  fi
+  rm -f "${PENDING_FILE}"
+fi
 
 if [[ -n "${name}" ]]; then
   if [[ ! -f "${CACHE_FILE}" || "$(head -n1 "${CACHE_FILE}" 2>/dev/null || true)" != "${name}" ]]; then

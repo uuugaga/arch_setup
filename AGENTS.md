@@ -162,9 +162,12 @@ or re-run `--fcitx`.
   `-s chewing`. Waybar's left click and `Mod+Space` both use it; middle click
   goes directly to English.
 - fcitx5 only changes IM while a text field is focused (state != 0). With no
-  input context, `-s` is a no-op; the cache keeps showing the last state. Do
-  not try to fake a state change or add `-o`/`-t` loops; they do nothing at
-  state 0. Document "focus the field first".
+  input context, `ime-toggle` writes the target to
+  `~/.cache/arch-niri-setup/ime-pending`; `ime-status.sh` applies it with
+  `fcitx5-remote -s` when a context appears, then removes the pending file.
+  The badge reads the cache, so it switches immediately even while queued.
+  Do not add `-o`/`-t` loops; they do nothing at state 0. The actual IM can lag
+  the badge by up to the Waybar poll interval (~1s).
 - The Waybar badge must stay visually identical in both states: one CJK glyph
   (`英` / `中`), same `Noto Sans CJK TC` font, same 15px size, fixed 20px
   min-width/min-height and the same rounded background. Do not change it to
@@ -176,6 +179,10 @@ or re-run `--fcitx`.
   fallback; otherwise the badge disappears whenever focus leaves a text field.
   Do not use the profile's `DefaultIM` as the fallback: fcitx5 normalizes it to
   the active Chewing method, not the startup state.
+- When the badge is clicked with no input context, `ime-toggle` writes the
+  target to `~/.cache/arch-niri-setup/ime-pending` and `ime-status.sh` applies
+  it when a text field gains focus. Keep the queue and the cache fallback in
+  sync; the badge must show the queued target immediately.
 - fcitx5 saves its profile on exit and rewrites it without the managed-by
   marker. `50-extras.sh` stops fcitx5 before deploying the profile and keeps an
   existing profile that already contains both IMs.

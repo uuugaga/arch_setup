@@ -95,6 +95,12 @@ if has_command fcitx5; then
     bad "ime-toggle missing"
   fi
 
+  if grep -qF 'ime-pending' "${HOME}/.local/bin/ime-toggle" 2>/dev/null; then
+    ok "ime-toggle queues the target when no field is focused"
+  else
+    bad "ime-toggle pending queue missing"
+  fi
+
   if grep -qF 'ime-toggle' "${HOME}/.config/niri/config.kdl" 2>/dev/null; then
     ok "Mod+Space uses ime-toggle"
   else

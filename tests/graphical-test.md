@@ -194,6 +194,13 @@ the script prints `{"text":"中",...,"class":"zh"}`. The 英/中 badge must keep
 the same outer box size in both states. Clicking the badge and pressing
 `Mod+Space` must do the same switch. Right-click opens `fcitx5-configtool`.
 
+Also test the no-focus queue: close all windows so `fcitx5-remote` reports
+state 0, click the badge, and confirm the badge changes immediately and
+`~/.cache/arch-niri-setup/ime-pending` contains the target. Then open the
+zenity dialog; within about one second `fcitx5-remote -n` should match the
+target, the pending file should disappear, and the badge should stay on the
+same state.
+
 End-to-end GTK4 test:
 
 ```bash

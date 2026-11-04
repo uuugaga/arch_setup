@@ -16,7 +16,7 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **126 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
+- `logs/validate.md`: **127 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
@@ -24,7 +24,7 @@ Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 - `logs/display-test.md`: nwg-displays GUI detected niri and the Virtual-1 output
 - `logs/ime-test.md`: fcitx5 + Chewing English/Chinese switching, Waybar badge
   and a GTK4 end-to-end input test
-- `tests/smoke-test.sh`: 35 PASS / 0 FAIL
+- `tests/smoke-test.sh`: 36 PASS / 0 FAIL
 
 The optional `install/50-extras.sh` modules:
 
@@ -230,9 +230,11 @@ first toggle activates Chewing.
 - With a text field focused, fcitx5's own `Ctrl+Space` trigger also works.
 
 fcitx5 only has an input context while a text field is focused. When no field
-is focused (state 0), `fcitx5-remote -s` cannot change the IM: the badge keeps
-showing the last known state and the click is a no-op. Focus the target text
-field first, then click the badge or press Mod+Space.
+is focused (state 0), `fcitx5-remote -s` cannot apply the switch immediately.
+The click still updates the badge and queues the target in
+`~/.cache/arch-niri-setup/ime-pending`; `ime-status.sh` applies it as soon as a
+text field gains focus (within about one second). The icon therefore works
+from the empty desktop too.
 
 `fcitx5-remote -t` only toggles fcitx5's active/inactive state; it is **not** a
 language switch. The project deploys `~/.local/bin/ime-toggle`, which uses
@@ -249,8 +251,10 @@ mixed Latin/CJK labels do not.
 `fcitx5-remote -n` returns an empty name when no text field is focused (state
 0). `ime-status.sh` caches the last non-empty state in
 `~/.cache/arch-niri-setup/ime-last`; a fresh session has no cache and falls
-back to the inactive English layout. The badge therefore remains stable
-instead of disappearing.
+back to the inactive English layout. It also consumes
+`~/.cache/arch-niri-setup/ime-pending`, the target queued by an icon click made
+while no text field was focused. The badge remains stable and switches
+immediately; the actual IM is applied when the next input context appears.
 
 ### fcitx5 config ownership
 

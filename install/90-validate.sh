@@ -177,6 +177,7 @@ if pkg_present fcitx5; then
   fi
 
   IME_TOGGLE="${HOME}/.local/bin/ime-toggle"
+  IME_SCRIPT="${HOME}/.config/waybar/scripts/ime-status.sh"
   if [[ -x "${IME_TOGGLE}" ]]; then
     result "ime:toggle" PASS "ime-toggle is executable"
   else
@@ -188,6 +189,13 @@ if pkg_present fcitx5; then
     result "ime:toggle-wired" PASS "Mod+Space and Waybar click use ime-toggle"
   else
     result "ime:toggle-wired" FAIL "ime-toggle is not wired into niri/Waybar"
+  fi
+
+  if grep -qF 'ime-pending' "${IME_TOGGLE}" \
+    && grep -qF 'PENDING_FILE' "${IME_SCRIPT}"; then
+    result "ime:pending" PASS "no-field click queues the target for the next input context"
+  else
+    result "ime:pending" FAIL "pending queue is not wired into ime-toggle/ime-status"
   fi
 
   if grep -qF '"custom/ime"' "${WAYBAR_CONFIG}"; then
