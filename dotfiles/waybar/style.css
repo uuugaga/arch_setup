@@ -41,17 +41,17 @@ window#waybar {
 #custom-mic,
 #pulseaudio {
   font-size: 18px;
-  min-width: 26px;
-  padding: 0 7px;
-  margin: 4px 4px;
+  min-width: 24px;
+  padding: 0 5px;
+  margin: 4px 3px;
   color: #a6adc8;
 }
 
 #cpu,
 #memory {
   font-size: 14px;
-  padding: 0 7px;
-  margin: 4px 4px;
+  padding: 0 5px;
+  margin: 4px 3px;
   color: #a6adc8;
 }
 
@@ -90,7 +90,7 @@ window#waybar {
   min-width: 22px;
   min-height: 22px;
   padding: 0 5px;
-  margin: 4px 5px;
+  margin: 4px 3px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.07);
 }
@@ -138,7 +138,7 @@ window#waybar {
    rhythm as the other right-side icons. */
 #group-volume {
   padding: 0;
-  margin: 4px 4px;
+  margin: 4px 3px;
 }
 
 #group-volume #pulseaudio {

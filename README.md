@@ -202,9 +202,11 @@ the zsh plugins and deploys the sample `~/.zshrc`.
 
 - Right-side icons are 18px (the rest of the bar stays at 14px). The IME badge
   is an intentional exception: a 16px bold CJK glyph inside a fixed 22px box.
-- `spacing` is `0`; every module gets the same `padding: 0 7px` and
-  `margin: 4px 4px`. This keeps the gaps equal and lets the hidden IME module
-  collapse to zero width instead of reserving a gap.
+- `spacing` is `0`. The right-side cluster uses `padding: 0 5px` and
+  `margin: 4px 3px` (24px minimum width for icon modules) for a tighter icon
+  rhythm; left/center modules keep `padding: 0 9px` and `margin: 4px 4px`.
+  The hidden IME module still collapses to zero width instead of reserving a
+  gap.
 - Volume is a `group/volume` drawer: normally only the speaker icon is shown.
   Hovering it reveals the slider. `transition-left-to-right` is `true` so the
   drawer expands leftwards from the right edge instead of off-screen.
