@@ -102,6 +102,22 @@ if [[ -f "${NIRI_DEPLOYED}" ]]; then
   else
     result "niri:monitor-include" FAIL "monitor.kdl include or file is missing"
   fi
+
+  border_block="$(sed -n '/^[[:space:]]*border[[:space:]]*{/,/^[[:space:]]*}/p' "${NIRI_DEPLOYED}")"
+  if grep -qE '^[[:space:]]*width 1$' <<< "${border_block}" \
+    && grep -qF 'active-gradient' <<< "${border_block}" \
+    && grep -qF 'inactive-gradient' <<< "${border_block}"; then
+    result "niri:glass-border" PASS "1px gradient rim with a faint accent"
+  else
+    result "niri:glass-border" FAIL "border is not the 1px glass gradient"
+  fi
+
+  focus_block="$(sed -n '/^[[:space:]]*focus-ring[[:space:]]*{/,/^[[:space:]]*}/p' "${NIRI_DEPLOYED}")"
+  if grep -qE '^[[:space:]]*off$' <<< "${focus_block}"; then
+    result "niri:no-focus-ring" PASS "focus ring disabled; focus uses the border gradient"
+  else
+    result "niri:no-focus-ring" FAIL "focus ring still enabled"
+  fi
 else
   result "niri:validate:deployed" FAIL "missing ${NIRI_DEPLOYED}"
 fi

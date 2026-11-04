@@ -27,18 +27,31 @@ input {
 layout {
     gaps 10
 
+    // The old 4px ring + 2px border looked like a plastic frame. The glass
+    // edge is a single hairline instead: a translucent white rim light at the
+    // top fades into a very faint theme-accent tint at the bottom. Focus is
+    // shown by the brighter gradient and a deeper shadow, not by a ring.
     focus-ring {
-        width 4
-        active-color "#89b4fa"
-        inactive-color "#313244"
-        urgent-color "#f38ba8"
+        off
     }
 
     border {
-        width 2
-        active-color "#89b4fa"
-        inactive-color "#313244"
-        urgent-color "#f38ba8"
+        width 1
+        // theme-from-wallpaper rewrites the gradient's `to` color and the
+        // urgent color. Keep the 8-digit alpha format.
+        active-gradient from="#ffffff5c" to="#89b4fa40" angle=180
+        inactive-gradient from="#ffffff24" to="#89b4fa1f" angle=180
+        urgent-color "#f38ba8cc"
+    }
+
+    shadow {
+        // Soft depth, like a floating glass panel.
+        on
+        softness 24
+        spread 0
+        offset x=0 y=5
+        color "#00000055"
+        inactive-color "#00000030"
     }
 }
 

@@ -16,7 +16,7 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **128 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
+- `logs/validate.md`: **130 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
@@ -24,7 +24,7 @@ Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 - `logs/display-test.md`: nwg-displays GUI detected niri and the Virtual-1 output
 - `logs/ime-test.md`: fcitx5 + Chewing English/Chinese switching, Waybar badge
   and a GTK4 end-to-end input test
-- `tests/smoke-test.sh`: 36 PASS / 0 FAIL
+- `tests/smoke-test.sh`: 37 PASS / 0 FAIL
 
 The optional `install/50-extras.sh` modules:
 
@@ -191,6 +191,43 @@ FORCE=1 ./install/40-desktop.sh
   layer surface spans the full screen width, so a niri layer-rule would blur
   the transparent gaps between the pills as well. Blur is applied to Fuzzel
   and mako, whose layer surfaces are the visible blocks.
+
+## Window borders
+
+niri draws a **1px gradient border** around every window and no separate focus
+ring. The gradient is a glass rim light: translucent white at the top fading
+into a very faint theme-accent tint at the bottom. The active window uses a
+brighter gradient and a deeper shadow; inactive windows use a dimmer gradient
+and a lighter shadow. The corner radius stays at 12px.
+
+```kdl
+layout {
+    focus-ring { off }
+
+    border {
+        width 1
+        active-gradient from="#ffffff5c" to="#89b4fa40" angle=180
+        inactive-gradient from="#ffffff24" to="#89b4fa1f" angle=180
+        urgent-color "#f38ba8cc"
+    }
+
+    shadow {
+        on
+        softness 24
+        spread 0
+        offset x=0 y=5
+        color "#00000055"
+        inactive-color "#00000030"
+    }
+}
+```
+
+The white rim and the alpha levels are design constants. `theme-from-wallpaper`
+rewrites only the gradient's `to` endpoint (accent at 25% / 12% alpha) and the
+urgent color (80% alpha), so the edge follows the wallpaper without becoming a
+solid colored frame. niri 26.04 accepts `#rrggbbaa` colors and
+`linear-gradient`-style gradients; the border width can be fractional, but 1
+logical pixel is the intended hairline at scale 1.
 
 ## Input method (fcitx5 + Chewing)
 
@@ -429,7 +466,7 @@ Theme scope:
 | mako | background, text and border colors |
 | Fuzzel | background, text, match, selection and border |
 | Alacritty | background, foreground, cursor and selection |
-| niri | focus-ring and border active/inactive/urgent colors |
+| niri | glass border gradient accent endpoint and urgent color |
 | GTK / libadwaita | `prefer-dark` + nearest GNOME `accent-color` |
 
 The palette is derived from the wallpaper: a soft dark background from the
@@ -443,6 +480,7 @@ Glass / transparency:
 | Surface | Setting |
 |---|---|
 | Waybar pills | `rgba(bg, 0.62)` + accent border + shadow (no blur) |
+| niri window edge | 1px top-to-bottom gradient (36% white -> 25% accent) + soft shadow |
 | Alacritty | `opacity = 0.62` |
 | niri terminal rule | `draw-border-with-background false` + `background-effect { blur true; xray false; }` |
 | Fuzzel | background alpha 0.80 + layer-rule blur |

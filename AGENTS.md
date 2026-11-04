@@ -67,7 +67,8 @@ or re-run `--fcitx`.
 - `theme-from-wallpaper` is the only writer of generated configs:
   `~/.config/waybar/style.css`, `~/.config/mako/config`,
   `~/.config/fuzzel/fuzzel.ini`, `~/.config/alacritty/alacritty.toml`, and the
-  color lines in `~/.config/niri/config.kdl`.
+  glass-gradient accent endpoint plus urgent color in
+  `~/.config/niri/config.kdl`.
 - Never hand-edit those generated files. Edit
   `dotfiles/theme/templates/` (and keep `dotfiles/waybar/style.css` in sync
   for the non-themed base style), then rerun `theme-from-wallpaper`.
@@ -97,6 +98,14 @@ or re-run `--fcitx`.
   - mako: 0.87 background alpha + `layer-rule` namespace `^mako$` blur.
   - niri `hotkey-overlay { skip-at-startup }` avoids the help overlay on every
     login.
+- Window borders are a deliberate **1px glass rim**, not a focus ring:
+  `focus-ring { off }`, `border { width 1 }`, and a top-to-bottom gradient
+  (`#ffffff5c` -> accent at `40` alpha active, `#ffffff24` -> accent at `1f`
+  inactive) plus a soft shadow. The white rim and alpha levels are constants;
+  `theme-from-wallpaper` rewrites only the gradient's `to` endpoint and
+  `urgent-color` (8-digit hex). Do not reintroduce a 2px+ border, a 4px focus
+  ring, or solid `active-color`/`inactive-color` lines. niri renders the
+  gradient per-window, so each window is lit from its own top edge.
 - Keep the palette soft: background value around 0.13, saturation capped near
   0.22, accent value 0.74-0.84. Avoid returning to near-black backgrounds or
   fully saturated accents; check text contrast against bright wallpaper areas.

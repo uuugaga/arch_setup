@@ -103,8 +103,8 @@ awww query
 cat ~/.config/arch-niri-setup/current-wallpaper```
 
 All three must name the same image. The Waybar background, accent, mako border,
-Fuzzel colors, Alacritty background and the niri focus ring should match that
-wallpaper.
+Fuzzel colors, Alacritty background and the niri border gradient's faint accent
+should match that wallpaper.
 
 Glass checks:
 
@@ -123,6 +123,16 @@ Glass checks:
 - If every glyph on the VM console looks soft, compare a native 1280x800
   screenshot. Blur affects only the backdrop; VirtualBox scaled mode/HiDPI
   scaling blurs the whole framebuffer.
+
+Window edge checks:
+
+- Focused and unfocused windows both have a hairline (~1px) edge, not a 2px+
+  frame or a 4px ring. The top is a soft translucent-white rim; the bottom
+  carries a very faint accent tint from the wallpaper.
+- Move focus between two windows. The active edge and shadow brighten; the
+  inactive edge and shadow dim. Corners remain rounded at 12px.
+- Inspect a native 1280x800 screenshot at 6x zoom for the edge. A scaled
+  VirtualBox console can make the 1px hairline look thicker or softer.
 
 Switch to the next image and wait for the transition:
 

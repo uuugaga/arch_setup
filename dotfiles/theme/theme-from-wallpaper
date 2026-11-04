@@ -257,6 +257,11 @@ def build_palette(entries: list[dict]) -> tuple[dict[str, str], dict]:
         "border": f"rgba({rgb_string(accent)}, 0.35)",
         "trough": f"rgba({rgb_string(fg)}, 0.22)",
         "accent_alpha": f"rgba({rgb_string(accent)}, 0.18)",
+        # niri glass border: the gradient's `to` color is the accent at 25%
+        # (active) / 12% (inactive); urgent stays readable at 80%.
+        "accent_glass": f"{accent}40",
+        "accent_glass_inactive": f"{accent}1f",
+        "urgent_glass": f"{urgent}cc",
         "accent_name": accent_name(accent_entry["h"]),
     }
     debug = {
@@ -420,21 +425,41 @@ def deploy_theme(image: Path, no_reload: bool) -> None:
     niri_config = XDG_CONFIG / "niri" / "config.kdl"
     if niri_config.is_file():
         niri_text = niri_config.read_text(encoding="utf-8")
+        # The glass border is a gradient with a fixed translucent-white top and
+        # a themed accent bottom. Only the `to` endpoint and the urgent color
+        # are palette-dependent. Accept both #rrggbb and #rrggbbaa so an old
+        # deployed config can still be upgraded in place.
+        color = r"#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?"
         niri_text, active = re.subn(
-            r'(active-color\s+)"#[0-9a-fA-F]{6}"',
-            rf'\1"{palette["accent"]}"',
+            rf"(?m)^([ \t]*active-gradient[ \t]+from=\"{color}\"[ \t]+to=\"){color}(\")",
+            rf'\1{palette["accent_glass"]}\2',
             niri_text,
         )
         niri_text, inactive = re.subn(
-            r'(inactive-color\s+)"#[0-9a-fA-F]{6}"',
-            rf'\1"{palette["surface"]}"',
+            rf"(?m)^([ \t]*inactive-gradient[ \t]+from=\"{color}\"[ \t]+to=\"){color}(\")",
+            rf'\1{palette["accent_glass_inactive"]}\2',
             niri_text,
         )
         niri_text, urgent = re.subn(
-            r'(urgent-color\s+)"#[0-9a-fA-F]{6}"',
-            rf'\1"{palette["urgent"]}"',
+            rf"(?m)^([ \t]*urgent-color[ \t]+\"){color}(\")",
+            rf'\1{palette["urgent_glass"]}\2',
             niri_text,
         )
+
+        # Fallback for a config deployed before the gradient border: update the
+        # old solid focus-ring/border colors instead of leaving the theme stale.
+        if not (active and inactive):
+            niri_text, active = re.subn(
+                r'(?m)^([ \t]*active-color[ \t]+)"#[0-9a-fA-F]{6}"',
+                rf'\1"{palette["accent"]}"',
+                niri_text,
+            )
+            niri_text, inactive = re.subn(
+                r'(?m)^([ \t]*inactive-color[ \t]+)"#[0-9a-fA-F]{6}"',
+                rf'\1"{palette["surface"]}"',
+                niri_text,
+            )
+
         if active and inactive and urgent:
             validate_niri(niri_text)
             atomic_write(RENDERED_DIR / "niri-config.kdl", niri_text)
@@ -456,6 +481,8 @@ def deploy_theme(image: Path, no_reload: bool) -> None:
         f"THEME_FG_BRIGHT={palette['fg_bright']}",
         f"THEME_MUTED={palette['muted']}",
         f"THEME_ACCENT={palette['accent']}",
+        f"THEME_ACCENT_GLASS={palette['accent_glass']}",
+        f"THEME_ACCENT_GLASS_INACTIVE={palette['accent_glass_inactive']}",
         f"THEME_ACCENT_RGB={palette['accent_rgb']}",
         f"THEME_URGENT={palette['urgent']}",
         f"THEME_ACCENT_NAME={palette['accent_name']}",

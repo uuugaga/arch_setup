@@ -44,6 +44,12 @@ if [[ -f "${HOME}/.config/niri/config.kdl" ]]; then
   else
     bad "niri config invalid: niri validate -c ~/.config/niri/config.kdl"
   fi
+  if sed -n '/^[[:space:]]*border[[:space:]]*{/,/^[[:space:]]*}/p' "${HOME}/.config/niri/config.kdl" \
+    | grep -qE '^[[:space:]]*width 1$'; then
+    ok "niri border is a 1px glass edge"
+  else
+    bad "niri border is not the 1px glass edge"
+  fi
 else
   bad "missing ~/.config/niri/config.kdl"
 fi
