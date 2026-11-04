@@ -14,20 +14,23 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 ## Status
 
-Verified on 2026-11-03 in the VirtualBox guest `ArchLinux x86_64`:
+Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **112 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
+- `logs/validate.md`: **126 PASS / 1 WARN / 0 FAIL** (with an active niri session; logged-out runs have 2 expected warnings)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
   transparency verified with both supplied wallpapers
 - `logs/display-test.md`: nwg-displays GUI detected niri and the Virtual-1 output
-- `tests/smoke-test.sh`: 27 PASS / 0 FAIL
+- `logs/ime-test.md`: fcitx5 + Chewing English/Chinese switching, Waybar badge
+  and a GTK4 end-to-end input test
+- `tests/smoke-test.sh`: 35 PASS / 0 FAIL
 
 The optional `install/50-extras.sh` modules:
 
 - `--apps` is installed and verified on this VM (see `logs/apps-test.md`).
-- `--fcitx`, `--gaming` and `--zsh` are implemented and syntax-checked but were
+- `--fcitx` is installed and verified on this VM (see `logs/ime-test.md`).
+- `--gaming` and `--zsh` are implemented and syntax-checked but were
   **not** exercised in this VM run.
 
 Wallpaper rotation and theming are part of the core install via `45-theme.sh`.
@@ -97,8 +100,8 @@ ready to use the graphical console:
 sudo systemctl start greetd
 ```
 
-Optional modules (run after the core steps; `--fcitx` must be last because it
-replaces the niri config with `config.full.kdl`):
+Optional modules (run after the core steps; `--fcitx` must run after
+`30-niri.sh` because it replaces the niri config with `config.full.kdl`):
 
 ```bash
 ./install/50-extras.sh --fcitx
@@ -173,7 +176,8 @@ FORCE=1 ./install/40-desktop.sh
 
 ## Waybar UI
 
-- Right-side icons are 18px (the rest of the bar stays at 14px).
+- Right-side icons are 18px (the rest of the bar stays at 14px). The IME badge
+  is an intentional exception: a 15px CJK glyph inside a fixed 20px box.
 - `spacing` is `0`; every module gets the same `padding: 0 7px` and
   `margin: 4px 4px`. This keeps the gaps equal and lets the hidden IME module
   collapse to zero width instead of reserving a gap.
@@ -187,6 +191,95 @@ FORCE=1 ./install/40-desktop.sh
   layer surface spans the full screen width, so a niri layer-rule would blur
   the transparent gaps between the pills as well. Blur is applied to Fuzzel
   and mako, whose layer surfaces are the visible blocks.
+
+## Input method (fcitx5 + Chewing)
+
+`./install/50-extras.sh --fcitx` installs fcitx5, the Chewing (注音) engine,
+the GTK/Qt IM modules and the config tool, then deploys the full niri config
+with the required environment and autostart:
+
+```kdl
+environment {
+    GTK_IM_MODULE "fcitx"
+    QT_IM_MODULE "fcitx"
+    XMODIFIERS "@im=fcitx"
+    SDL_IM_MODULE "fcitx"
+    GLFW_IM_MODULE "ibus"
+}
+
+spawn-at-startup "sh" "-lc" "sleep 1; fcitx5 -d --replace"
+```
+
+The profile contains two input methods:
+
+```text
+keyboard-us  (English, first/inactive layout)
+chewing      (Chinese, 注音, active input method)
+```
+
+fcitx5 normalizes `DefaultIM` to the second item, so `DefaultIM=chewing` after
+the first save. The session still starts in the inactive English layout; the
+first toggle activates Chewing.
+
+### Switching
+
+- Click the **英 / 中** badge in the top-right Waybar cluster.
+- Press **Mod+Space** (Super+Space).
+- Right-click the badge to open `fcitx5-configtool`.
+- Middle-click switches directly to English.
+- With a text field focused, fcitx5's own `Ctrl+Space` trigger also works.
+
+fcitx5 only has an input context while a text field is focused. When no field
+is focused (state 0), `fcitx5-remote -s` cannot change the IM: the badge keeps
+showing the last known state and the click is a no-op. Focus the target text
+field first, then click the badge or press Mod+Space.
+
+`fcitx5-remote -t` only toggles fcitx5's active/inactive state; it is **not** a
+language switch. The project deploys `~/.local/bin/ime-toggle`, which uses
+`fcitx5-remote -s keyboard-us` / `-s chewing`.
+
+### Equal-size indicator
+
+The badge deliberately uses two single CJK characters, **英** and **中**, from
+the same font (`Noto Sans CJK TC`) at the same size. It also has a fixed
+minimum 20×20 box with 5px side padding and a rounded background. This
+guarantees both states have the same visual size; `EN`/`ZH`, `EN`/`中`, or
+mixed Latin/CJK labels do not.
+
+`fcitx5-remote -n` returns an empty name when no text field is focused (state
+0). `ime-status.sh` caches the last non-empty state in
+`~/.cache/arch-niri-setup/ime-last`; a fresh session has no cache and falls
+back to the inactive English layout. The badge therefore remains stable
+instead of disappearing.
+
+### fcitx5 config ownership
+
+fcitx5 rewrites `~/.config/fcitx5/profile` and
+`~/.config/fcitx5/conf/notifications.conf` without the project marker. The
+installer:
+
+- stops fcitx5 before deploying the profile (it saves state on exit);
+- keeps an existing profile that already contains `keyboard-us` and `chewing`;
+- hides the fcitx5 `wayland-diagnose-other` tip with `HiddenNotifications`.
+
+The diagnostic tip would otherwise appear on every start because the project
+keeps `GTK_IM_MODULE=fcitx` for XWayland/Electron compatibility.
+
+### Verified
+
+A GTK4 `zenity --entry` test typed the Chewing sequence `su3`, selected the
+first candidate, and returned `你` (UTF-8 `e4 bd a0`). The Waybar badge and
+`Mod+Space` were both verified in the live niri session.
+
+Limitations:
+
+- Electron/Chromium apps may need native Wayland flags
+  (`--enable-wayland-ime --ozone-platform=wayland`) for the best IME
+  experience; otherwise they run under XWayland and use `GTK_IM_MODULE=fcitx`.
+- Alacritty/terminal IME support depends on its winit text-input support; the
+  GTK4 test is the authoritative desktop input test.
+- The VM was not rebooted and the niri session was not restarted during the
+  test; the config was applied with `niri msg action load-config-file`.
 
 ## Display scaling and multi-monitor
 
@@ -425,6 +518,8 @@ Every step writes a timestamped transcript plus a stable report:
 - `logs/validate.md`
 - `logs/graphical-test.md`
 - `logs/theme-test.md`
+- `logs/display-test.md`
+- `logs/ime-test.md`
 - `logs/preflight.env`
 - `logs/<step>-<timestamp>.log`
 
@@ -439,6 +534,9 @@ Every step writes a timestamped transcript plus a stable report:
 - One owner for fcitx5 (niri autostart), no systemd-user + niri + Waybar triple
   start.
 - Single Waybar config that hides the IME module until fcitx5 is installed.
+- IME toggle uses explicit `-s keyboard-us` / `-s chewing`; `fcitx5-remote -t`
+  only toggles fcitx5 active/inactive.
+- The English/Chinese badge uses same-font single CJK glyphs and a fixed box.
 - Explicit VM vs bare-metal GPU detection.
 - No `sudo paru`, no `makepkg` as root.
 - No full system upgrade hidden inside every module script; upgrade happens

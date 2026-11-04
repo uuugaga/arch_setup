@@ -47,6 +47,8 @@ Theme source files:
 - `dotfiles/theme/templates/` - Waybar, mako, Fuzzel, Alacritty templates.
 - `dotfiles/awww/wallpaper-rotate` - stateful image selection + theme call.
 - `dotfiles/systemd/user/wallpaper-rotate.{service,timer}` - hourly rotation.
+- `dotfiles/fcitx5/` - English/Chewing profile, `ime-toggle`, notification
+  config.
 
 ## Ordering
 
@@ -144,6 +146,51 @@ or re-run `--fcitx`.
   upstream but cannot be physically tested without a second output.
 - `theme-from-wallpaper` validates niri configs in a temp dir and copies sibling
   `*.kdl` includes, so theme regeneration must keep `monitor.kdl` available.
+
+## Input method (fcitx5 + Chewing)
+
+- `50-extras.sh --fcitx` installs `fcitx5`, `fcitx5-chewing`,
+  `fcitx5-configtool`, `fcitx5-gtk` and `fcitx5-qt`. It deploys
+  `config.full.kdl`, which is the only config with the IME environment,
+  `fcitx5` autostart and `Mod+Space` bind.
+- Profile: `keyboard-us` first (inactive English layout), `chewing` second.
+  fcitx5 normalizes `DefaultIM` to the second item, so `DefaultIM=chewing` is
+  expected; the session starts English and the first toggle activates Chewing.
+  niri owns fcitx5 startup; do not add a systemd user service.
+- `fcitx5-remote -t` toggles active/inactive, **not** English/Chinese. Use
+  `~/.local/bin/ime-toggle`, which calls `fcitx5-remote -s keyboard-us` or
+  `-s chewing`. Waybar's left click and `Mod+Space` both use it; middle click
+  goes directly to English.
+- fcitx5 only changes IM while a text field is focused (state != 0). With no
+  input context, `-s` is a no-op; the cache keeps showing the last state. Do
+  not try to fake a state change or add `-o`/`-t` loops; they do nothing at
+  state 0. Document "focus the field first".
+- The Waybar badge must stay visually identical in both states: one CJK glyph
+  (`英` / `中`), same `Noto Sans CJK TC` font, same 15px size, fixed 20px
+  min-width/min-height and the same rounded background. Do not change it to
+  `EN`/`ZH`, `EN`/`中`, or use different font sizes.
+- `ime-status.sh` polls every second. fcitx5 reports an empty name when no text
+  field is focused, so the script caches the last non-empty IM in
+  `~/.cache/arch-niri-setup/ime-last`. A fresh session has no cache and falls
+  back to `keyboard-us` (the inactive English layout). Do not remove the cache
+  fallback; otherwise the badge disappears whenever focus leaves a text field.
+  Do not use the profile's `DefaultIM` as the fallback: fcitx5 normalizes it to
+  the active Chewing method, not the startup state.
+- fcitx5 saves its profile on exit and rewrites it without the managed-by
+  marker. `50-extras.sh` stops fcitx5 before deploying the profile and keeps an
+  existing profile that already contains both IMs.
+- Keep `GTK_IM_MODULE=fcitx` for XWayland/Electron. That triggers fcitx5's
+  `wayland-diagnose-other` tip on niri; it is hidden via
+  `dotfiles/fcitx5/conf/notifications.conf` and `ensure_fcitx_notifications`.
+  Do not blindly replace that file: fcitx5 stores the list as an indexed
+  `[HiddenNotifications]` section.
+- `50-extras.sh` reloads niri after deploying the full config so `Mod+Space`
+  works in the current session. A fresh login also works.
+- `90-validate.sh` checks the binaries, packages, profile, niri environment,
+  `ime-toggle` wiring, Waybar module, JSON output and the `英`/`中` labels.
+- End-to-end verification used GTK4 `zenity --entry`: type `su3`, space, `1`
+  to get `你`. Electron/Chromium may need native Wayland IME flags; do not
+  claim they work solely from the GTK test.
 
 ## Optional apps
 

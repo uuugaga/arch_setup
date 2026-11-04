@@ -1,9 +1,13 @@
 # managed-by: arch-niri-setup
-
+#
+# First item: inactive English keyboard layout.
+# Second item: Chewing (注音), activated by the toggle.
+# fcitx5 normalizes DefaultIM to the second item (the active IM), so the
+# session starts in English and the first toggle activates Chewing.
 [Groups/0]
 Name=Default
 Default Layout=us
-DefaultIM=keyboard-us
+DefaultIM=chewing
 
 [Groups/0/Items/0]
 Name=keyboard-us

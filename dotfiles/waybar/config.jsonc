@@ -81,7 +81,7 @@
     "interval": 1,
     "return-type": "json",
     "format": "{}",
-    "on-click": "fcitx5-remote -t",
+    "on-click": "~/.local/bin/ime-toggle",
     "on-click-right": "fcitx5-configtool",
     "on-click-middle": "fcitx5-remote -s keyboard-us"
   },

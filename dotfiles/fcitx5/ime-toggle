@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# managed-by: arch-niri-setup
+# Toggle between the English keyboard and Chewing.
+#
+# `fcitx5-remote -t` only toggles fcitx5's active/inactive state, not the input
+# method. `-s <im>` is the reliable way to switch between keyboard-us and
+# chewing. When no text field is focused, fcitx5 reports an empty name; use the
+# cache written by ime-status.sh, or assume English and switch to Chinese.
+set -euo pipefail
+
+if ! command -v fcitx5-remote >/dev/null 2>&1; then
+  exit 0
+fi
+
+name="$(fcitx5-remote -n 2>/dev/null || true)"
+
+if [[ -z "${name}" ]]; then
+  cache="${XDG_CACHE_HOME:-${HOME}/.cache}/arch-niri-setup/ime-last"
+  name="$(head -n1 "${cache}" 2>/dev/null || true)"
+fi
+
+if [[ -z "${name}" ]]; then
+  exec fcitx5-remote -s chewing
+fi
+
+case "${name}" in
+  keyboard-*)
+    exec fcitx5-remote -s chewing
+    ;;
+  *)
+    exec fcitx5-remote -s keyboard-us
+    ;;
+esac

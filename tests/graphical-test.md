@@ -175,12 +175,55 @@ Do not press Apply during a smoke test unless you intend to change the active
 layout. With multiple outputs connected, arrange them in the GUI; niri uses
 dynamic workspaces, so workspace assignment is unavailable.
 
-## 6. Cleanup
+## 6. Input method (fcitx5 + Chewing)
+
+```bash
+export XDG_RUNTIME_DIR=/run/user/1000
+export WAYLAND_DISPLAY=wayland-1
+export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+
+fcitx5-remote -n
+~/.config/waybar/scripts/ime-status.sh
+~/.local/bin/ime-toggle
+~/.config/waybar/scripts/ime-status.sh
+```
+
+Expected: the first state is `keyboard-us` and the script prints
+`{"text":"英",...,"class":"en"}`. After `ime-toggle` the state is `chewing` and
+the script prints `{"text":"中",...,"class":"zh"}`. The 英/中 badge must keep
+the same outer box size in both states. Clicking the badge and pressing
+`Mod+Space` must do the same switch. Right-click opens `fcitx5-configtool`.
+
+End-to-end GTK4 test:
+
+```bash
+zenity --entry --title="IME Test" --text="Type Chinese here" > /tmp/ime-zenity.txt &
+```
+
+Focus the dialog, make sure the badge shows 中, type `su3`, press Space, then
+press `1` to select 你, then click OK. Verify:
+
+```bash
+cat /tmp/ime-zenity.txt   # must print 你
+```
+
+The standard Chewing/Zhuyin mapping used here is ㄋ=`s`, ㄧ=`u`, tone 3=`3`.
+If `su3` does not produce 你, check the Chewing keyboard mapping in
+`fcitx5-configtool`; do not change the project just to match one test sequence.
+After the Chinese test, switch back to 英 and type ASCII text to confirm the
+English state.
+
+For Electron/Chromium apps, note whether input works under XWayland
+(`GTK_IM_MODULE=fcitx`) or requires native Wayland flags
+(`--enable-wayland-ime --ozone-platform=wayland`).
+
+## 7. Cleanup
 
 ```bash
 export XDG_RUNTIME_DIR=/run/user/1000
 export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
 
+pkill -x zenity 2>/dev/null || true
 systemctl --user stop niri.service
 niri msg action quit 2>/dev/null || true
 
@@ -191,12 +234,13 @@ sudo systemctl restart greetd
 
 Expected: tuigreet returns, `pgrep -x niri` is empty.
 
-## 7. Record the result
+## 8. Record the result
 
 Save a short report with:
 
 - date, VM name, GPU/3D setting
 - screenshot outcomes for greeter, Waybar, Alacritty, Fuzzel, mako
+- IME states 英/中, badge size comparison, and the `zenity` result
 - `niri msg outputs` and `niri msg workspaces` excerpts
 - XWayland and portal results
 - any warnings from `journalctl --user -b`

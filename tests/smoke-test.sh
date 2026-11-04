@@ -65,6 +65,51 @@ for f in \
   [[ -f "${f}" ]] && ok "present: ${f}" || bad "missing: ${f}"
 done
 
+section "Input method"
+if has_command fcitx5; then
+  for c in fcitx5 fcitx5-remote fcitx5-configtool; do
+    if has_command "${c}"; then
+      ok "${c}"
+    else
+      bad "missing command: ${c}"
+    fi
+  done
+
+  if [[ -f "${HOME}/.config/fcitx5/profile" ]] \
+    && grep -qx 'Name=keyboard-us' "${HOME}/.config/fcitx5/profile" \
+    && grep -qx 'Name=chewing' "${HOME}/.config/fcitx5/profile"; then
+    ok "fcitx5 profile has keyboard-us + chewing"
+  else
+    bad "fcitx5 profile missing keyboard-us/chewing"
+  fi
+
+  if [[ -x "${HOME}/.config/waybar/scripts/ime-status.sh" ]]; then
+    ok "ime-status.sh executable"
+  else
+    bad "ime-status.sh missing"
+  fi
+
+  if [[ -x "${HOME}/.local/bin/ime-toggle" ]]; then
+    ok "ime-toggle executable"
+  else
+    bad "ime-toggle missing"
+  fi
+
+  if grep -qF 'ime-toggle' "${HOME}/.config/niri/config.kdl" 2>/dev/null; then
+    ok "Mod+Space uses ime-toggle"
+  else
+    bad "Mod+Space does not use ime-toggle"
+  fi
+
+  if grep -qF '"custom/ime"' "${HOME}/.config/waybar/config.jsonc" 2>/dev/null; then
+    ok "Waybar custom/ime module configured"
+  else
+    bad "Waybar custom/ime module missing"
+  fi
+else
+  info "fcitx5 not installed; skipping optional IME checks"
+fi
+
 section "Wallpaper / theme"
 if [[ -x "${HOME}/.local/bin/wallpaper-rotate" && -x "${HOME}/.local/bin/theme-from-wallpaper" ]]; then
   ok "theme scripts executable"

@@ -1,27 +1,64 @@
 #!/usr/bin/env bash
 # managed-by: arch-niri-setup
-# Emits a Waybar JSON line. When fcitx5 is not installed the module is hidden
-# by style.css (#custom-ime.missing) instead of reserving empty space.
+# Emits a Waybar JSON line for fcitx5.
+#
+# Both labels are single CJK characters ("英" and "中") rendered with the same
+# font family and font size. That guarantees the indicator has identical
+# metrics in both states; "EN"/"ZH" or "EN"/"中" would use different glyph
+# widths. Classes let style.css color the active state.
+#
+# fcitx5 reports an empty input method when no text field is focused (state 0).
+# Cache the last non-empty value; a fresh session has no cache and starts in
+# the inactive English layout, so fall back to keyboard-us rather than the
+# profile's DefaultIM (which fcitx5 normalizes to the active Chewing method).
 set -euo pipefail
 
-if ! command -v fcitx5-remote >/dev/null 2>&1; then
-  printf '{"text":"","tooltip":"fcitx5 is not installed (install/50-extras.sh --fcitx)","class":"missing"}\n'
+CACHE_DIR="${XDG_CACHE_HOME:-${HOME}/.cache}/arch-niri-setup"
+CACHE_FILE="${CACHE_DIR}/ime-last"
+
+missing() {
+  printf '{"text":"","tooltip":"%s","class":"missing"}\n' "$1"
   exit 0
-fi
+}
+
+command -v fcitx5-remote >/dev/null 2>&1 \
+  || missing "fcitx5 is not installed (install/50-extras.sh --fcitx)"
+fcitx5-remote --check >/dev/null 2>&1 \
+  || missing "fcitx5 is not running"
 
 name="$(fcitx5-remote -n 2>/dev/null || true)"
 
+if [[ -n "${name}" ]]; then
+  if [[ ! -f "${CACHE_FILE}" || "$(head -n1 "${CACHE_FILE}" 2>/dev/null || true)" != "${name}" ]]; then
+    mkdir -p "${CACHE_DIR}" 2>/dev/null || true
+    tmp="${CACHE_FILE}.$$"
+    if printf '%s\n' "${name}" > "${tmp}" 2>/dev/null; then
+      mv -f "${tmp}" "${CACHE_FILE}" 2>/dev/null || rm -f "${tmp}"
+    else
+      rm -f "${tmp}"
+    fi
+  fi
+elif [[ -s "${CACHE_FILE}" ]]; then
+  name="$(head -n1 "${CACHE_FILE}" 2>/dev/null || true)"
+else
+  # Fresh session: fcitx5 starts in the inactive English keyboard layout.
+  name="keyboard-us"
+fi
+
 case "${name}" in
-  keyboard-us|keyboard-us-dvorak|keyboard-us-colemak)
-    printf '{"text":"EN","tooltip":"Input method: English keyboard-us","class":"en"}\n'
+  keyboard-*)
+    printf '{"text":"英","tooltip":"English keyboard (%s)","class":"en"}\n' "${name}"
     ;;
-  chewing)
-    printf '{"text":"ZH","tooltip":"Input method: Chewing 注音","class":"zh"}\n'
+  chewing*)
+    printf '{"text":"中","tooltip":"Chinese - Chewing 注音 (%s)","class":"zh"}\n' "${name}"
+    ;;
+  pinyin*)
+    printf '{"text":"中","tooltip":"Chinese - Pinyin (%s)","class":"zh"}\n' "${name}"
     ;;
   "")
-    printf '{"text":"","tooltip":"fcitx5 is not running","class":"missing"}\n'
+    missing "fcitx5 is running but has no input method"
     ;;
   *)
-    printf '{"text":"IM","tooltip":"Input method: %s","class":"other"}\n' "${name}"
+    printf '{"text":"中","tooltip":"Chinese input (%s)","class":"zh"}\n' "${name}"
     ;;
 esac

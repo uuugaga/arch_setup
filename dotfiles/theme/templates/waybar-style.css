@@ -61,7 +61,6 @@ window#waybar {
    the gaps between icons are visually equal. Icon modules get a fixed
    minimum box. */
 #custom-notifications,
-#custom-ime,
 #network,
 #bluetooth,
 #custom-mic,
@@ -81,17 +80,41 @@ window#waybar {
   color: {{fg}};
 }
 
+/* IME indicator: both states are one CJK glyph from the same font inside a
+   fixed-size badge, so the English ("英") and Chinese ("中") icons have
+   identical visual size and the module never shifts the bar. */
 #custom-ime {
-  font-size: 14px;
-  font-weight: 700;
+  font-family: "Noto Sans CJK TC", "JetBrainsMono Nerd Font", sans-serif;
+  font-size: 15px;
+  font-weight: 600;
   min-width: 20px;
+  min-height: 20px;
+  padding: 0 5px;
+  margin: 4px 5px;
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.07);
+  color: {{fg}};
+}
+
+#custom-ime.en {
+  color: {{fg}};
+}
+
+#custom-ime.zh {
+  color: {{accent}};
+}
+
+#custom-ime.other {
+  color: {{fg}};
 }
 
 /* Hide the IME indicator until fcitx5 is installed by 50-extras.sh. */
 #custom-ime.missing {
   min-width: 0;
+  min-height: 0;
   padding: 0;
   margin: 0;
+  background: transparent;
 }
 
 #custom-notifications,

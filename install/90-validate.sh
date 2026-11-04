@@ -142,6 +142,80 @@ for s in notifications.sh notifications-menu.sh wifi-menu.sh mic-status.sh ime-s
   fi
 done
 
+section "Input method"
+if pkg_present fcitx5; then
+  for c in fcitx5 fcitx5-remote fcitx5-configtool; do
+    if has_command "${c}"; then
+      result "ime:binary:${c}" PASS "$(command -v "${c}")"
+    else
+      result "ime:binary:${c}" FAIL "not found in PATH"
+    fi
+  done
+
+  for p in fcitx5 fcitx5-chewing fcitx5-gtk fcitx5-qt; do
+    if pkg_present "${p}"; then
+      result "ime:package:${p}" PASS "$(pkg_version "${p}")"
+    else
+      result "ime:package:${p}" FAIL "missing"
+    fi
+  done
+
+  IME_PROFILE="${HOME}/.config/fcitx5/profile"
+  if [[ -f "${IME_PROFILE}" ]] \
+    && grep -qx 'Name=keyboard-us' "${IME_PROFILE}" \
+    && grep -qx 'Name=chewing' "${IME_PROFILE}"; then
+    result "ime:profile" PASS "keyboard-us + chewing"
+  else
+    result "ime:profile" FAIL "profile must contain keyboard-us and chewing"
+  fi
+
+  if grep -qF 'GTK_IM_MODULE "fcitx"' "${NIRI_DEPLOYED}" \
+    && grep -qF 'fcitx5 -d --replace' "${NIRI_DEPLOYED}"; then
+    result "ime:niri" PASS "environment and autostart configured"
+  else
+    result "ime:niri" FAIL "niri environment or fcitx5 autostart missing"
+  fi
+
+  IME_TOGGLE="${HOME}/.local/bin/ime-toggle"
+  if [[ -x "${IME_TOGGLE}" ]]; then
+    result "ime:toggle" PASS "ime-toggle is executable"
+  else
+    result "ime:toggle" FAIL "missing executable ${IME_TOGGLE}"
+  fi
+
+  if grep -qF 'ime-toggle' "${NIRI_DEPLOYED}" \
+    && grep -qF 'ime-toggle' "${WAYBAR_CONFIG}"; then
+    result "ime:toggle-wired" PASS "Mod+Space and Waybar click use ime-toggle"
+  else
+    result "ime:toggle-wired" FAIL "ime-toggle is not wired into niri/Waybar"
+  fi
+
+  if grep -qF '"custom/ime"' "${WAYBAR_CONFIG}"; then
+    result "ime:waybar-module" PASS "custom/ime is in modules-right"
+  else
+    result "ime:waybar-module" FAIL "custom/ime missing from Waybar config"
+  fi
+
+  IME_SCRIPT="${HOME}/.config/waybar/scripts/ime-status.sh"
+  if [[ -x "${IME_SCRIPT}" ]]; then
+    out="$("${IME_SCRIPT}" 2>/dev/null || true)"
+    if [[ "${out}" == \{*'"class"'* ]]; then
+      result "ime:indicator" PASS "script emits JSON"
+    else
+      result "ime:indicator" FAIL "script did not emit JSON: ${out}"
+    fi
+    if grep -qF '"text":"英"' "${IME_SCRIPT}" && grep -qF '"text":"中"' "${IME_SCRIPT}"; then
+      result "ime:labels" PASS "single-CJK labels keep both states the same size"
+    else
+      result "ime:labels" FAIL "indicator labels are not 英/中"
+    fi
+  else
+    result "ime:indicator" FAIL "missing executable ${IME_SCRIPT}"
+  fi
+else
+  result "ime:packages" WARN "fcitx5 is not installed (optional 50-extras.sh --fcitx)"
+fi
+
 section "Fuzzel / mako / Alacritty"
 FUZZEL_CONF="${HOME}/.config/fuzzel/fuzzel.ini"
 if [[ -f "${FUZZEL_CONF}" ]]; then

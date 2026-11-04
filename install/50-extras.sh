@@ -78,6 +78,93 @@ deploy_or_warn() {
   fi
 }
 
+# fcitx5 rewrites ~/.config/fcitx5/profile without the managed-by marker when
+# it exits. Keep a profile that already has the two expected input methods;
+# otherwise back it up and replace it so a fresh install really has working
+# English + Chewing switching.
+deploy_fcitx_profile() {
+  local src="${DOTFILES_DIR}/fcitx5/profile"
+  local dest="${HOME}/.config/fcitx5/profile"
+  local force="${FORCE}"
+
+  if [[ -f "${dest}" ]] && ! grep -qF "${MARKER}" "${dest}"; then
+    if grep -qx 'Name=keyboard-us' "${dest}" && grep -qx 'Name=chewing' "${dest}"; then
+      log "keeping existing fcitx5 profile (keyboard-us + chewing)"
+      return 0
+    fi
+    warn "existing fcitx5 profile lacks keyboard-us/chewing; backing it up and replacing it"
+    force=1
+  fi
+
+  local rc=0
+  deploy_file "${src}" "${dest}" "${force}" 644 || rc=$?
+  if [[ "${rc}" -eq 2 ]]; then
+    warn "kept existing unmanaged fcitx5 profile: ${dest}"
+  elif [[ "${rc}" -ne 0 ]]; then
+    die "deploy failed: ${src} -> ${dest} (exit ${rc})"
+  fi
+}
+
+# fcitx5 writes HiddenNotifications as an indexed section:
+#   [HiddenNotifications]
+#   0=wayland-diagnose-other
+# Add the tip ID without dropping other hidden notification IDs.
+ensure_fcitx_notifications() {
+  local dest="${HOME}/.config/fcitx5/conf/notifications.conf"
+  mkdir -p "$(dirname "${dest}")"
+
+  if [[ ! -f "${dest}" ]]; then
+    deploy_file "${DOTFILES_DIR}/fcitx5/conf/notifications.conf" "${dest}" 0 644
+    return 0
+  fi
+
+  if grep -Eq '^[0-9]+=wayland-diagnose-other$' "${dest}"; then
+    log "fcitx5 Wayland diagnostic tip already hidden"
+    return 0
+  fi
+
+  backup_file "${dest}"
+  python3 - "${dest}" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+lines = path.read_text(encoding="utf-8").splitlines()
+if any(re.fullmatch(r"\d+=wayland-diagnose-other", line.strip()) for line in lines):
+    raise SystemExit(0)
+
+# The old/empty form is a flat key and is not how fcitx5 serializes a vector.
+lines = [line for line in lines if not line.strip().startswith("HiddenNotifications=")]
+
+start = None
+for index, line in enumerate(lines):
+    if line.strip() == "[HiddenNotifications]":
+        start = index
+        break
+
+if start is None:
+    lines.append("[HiddenNotifications]")
+    start = len(lines) - 1
+
+end = len(lines)
+for index in range(start + 1, len(lines)):
+    if lines[index].strip().startswith("["):
+        end = index
+        break
+
+max_index = -1
+for line in lines[start + 1 : end]:
+    match = re.match(r"\s*(\d+)\s*=", line)
+    if match:
+        max_index = max(max_index, int(match.group(1)))
+
+lines.insert(end, f"{max_index + 1}=wayland-diagnose-other")
+path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+PY
+  log "hid the fcitx5 Wayland diagnostic tip"
+}
+
 install_available_repo() {
   local available=()
   local p
@@ -102,6 +189,37 @@ user_systemd() {
   fi
 }
 
+start_fcitx5_in_session() {
+  local socket="${NIRI_SOCKET:-}"
+  if [[ -z "${socket}" && -n "${XDG_RUNTIME_DIR:-}" ]]; then
+    socket="$(find "${XDG_RUNTIME_DIR}" -maxdepth 1 -name 'niri.*.sock' -print -quit 2>/dev/null || true)"
+  fi
+  if [[ -z "${socket}" ]] || ! has_command niri; then
+    log "no active niri session; fcitx5 will start at next login"
+    return 0
+  fi
+  if NIRI_SOCKET="${socket}" niri msg action spawn -- fcitx5 -d --replace >/dev/null 2>&1; then
+    log "started fcitx5 in the active niri session"
+  else
+    warn "could not start fcitx5 in the active session; it will start at next login"
+  fi
+}
+
+reload_niri_in_session() {
+  local socket="${NIRI_SOCKET:-}"
+  if [[ -z "${socket}" && -n "${XDG_RUNTIME_DIR:-}" ]]; then
+    socket="$(find "${XDG_RUNTIME_DIR}" -maxdepth 1 -name 'niri.*.sock' -print -quit 2>/dev/null || true)"
+  fi
+  if [[ -z "${socket}" ]] || ! has_command niri; then
+    return 0
+  fi
+  if NIRI_SOCKET="${socket}" niri msg action load-config-file >/dev/null 2>&1; then
+    log "reloaded niri config in the active session"
+  else
+    warn "could not reload niri config; log out/in to apply the new binds"
+  fi
+}
+
 deploy_full_niri_config() {
   section "Deploying full niri config (extras enabled)"
   local rc=0
@@ -121,9 +239,29 @@ deploy_full_niri_config() {
 if [[ "${WANT_FCITX}" -eq 1 ]]; then
   section "Module: fcitx5 + Chewing"
   pacman_install "${EXTRAS_FCITX[@]}"
-  mkdir -p "${HOME}/.config/fcitx5"
-  deploy_or_warn "${DOTFILES_DIR}/fcitx5/profile" "${HOME}/.config/fcitx5/profile" 644
+
+  # fcitx5 saves its in-memory input method list over ~/.config/fcitx5/profile
+  # when it exits. Stop it before deploying the profile, otherwise a running
+  # instance would overwrite the new keyboard-us + chewing list.
+  if pgrep -x fcitx5 >/dev/null 2>&1; then
+    log "stopping fcitx5 before deploying profile"
+    pkill -TERM -x fcitx5 || true
+    for _ in {1..50}; do
+      pgrep -x fcitx5 >/dev/null 2>&1 || break
+      sleep 0.1
+    done
+    if pgrep -x fcitx5 >/dev/null 2>&1; then
+      warn "fcitx5 did not stop; it may overwrite the deployed profile on exit"
+    fi
+  fi
+
+  mkdir -p "${HOME}/.config/fcitx5" "${HOME}/.local/bin"
+  deploy_fcitx_profile
+  ensure_fcitx_notifications
+  deploy_or_warn "${DOTFILES_DIR}/fcitx5/ime-toggle" "${HOME}/.local/bin/ime-toggle" 755
   deploy_full_niri_config
+  reload_niri_in_session
+  start_fcitx5_in_session
   info "fcitx5 is started by niri (single owner); no systemd user service is installed."
 fi
 

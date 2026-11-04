@@ -116,8 +116,8 @@ binds {
     // Lock screen
     Mod+Escape { spawn "swaylock"; }
 
-    // Input method toggle
-    Mod+Space { spawn "fcitx5-remote" "-t"; }
+    // Input method toggle (English keyboard <-> Chewing)
+    Mod+Space { spawn "sh" "-lc" "\"$HOME/.local/bin/ime-toggle\""; }
 
     // Focus
     Mod+Left { focus-column-left; }
