@@ -88,6 +88,57 @@ for c in "${CLI_COMMANDS[@]}"; do
   fi
 done
 
+section "Zsh / Starship"
+if pkg_present starship; then
+  for p in "${EXTRAS_ZSH[@]}"; do
+    if pkg_present "${p}"; then
+      result "zsh:package:${p}" PASS "$(pkg_version "${p}")"
+    else
+      result "zsh:package:${p}" FAIL "missing"
+    fi
+  done
+  for c in zsh starship; do
+    if has_command "${c}"; then
+      result "zsh:binary:${c}" PASS "$(command -v "${c}")"
+    else
+      result "zsh:binary:${c}" FAIL "not found in PATH"
+    fi
+  done
+
+  ZSHRC="${HOME}/.zshrc"
+  if [[ -f "${ZSHRC}" ]]; then
+    if grep -qF "${MARKER}" "${ZSHRC}"; then
+      result "zsh:zshrc-marker" PASS "deployed .zshrc is managed by this project"
+    else
+      result "zsh:zshrc-marker" WARN ".zshrc lacks the managed-by marker"
+    fi
+    if grep -qE '(^|[[:space:]])compinit([[:space:]]|$)' "${ZSHRC}" \
+      && grep -qF 'zsh-completions' "${ZSHRC}"; then
+      result "zsh:completion" PASS "compinit and zsh-completions are wired"
+    else
+      result "zsh:completion" FAIL "compinit or zsh-completions is missing from .zshrc"
+    fi
+    ZSH_PLUGINS_OK=1
+    for pat in 'starship init zsh' 'zsh-autosuggestions' 'zsh-syntax-highlighting'; do
+      grep -qF "${pat}" "${ZSHRC}" || ZSH_PLUGINS_OK=0
+    done
+    if [[ "${ZSH_PLUGINS_OK}" -eq 1 ]]; then
+      result "zsh:plugins" PASS "Starship, autosuggestions and syntax highlighting are wired"
+    else
+      result "zsh:plugins" FAIL "one or more zsh plugins are missing from .zshrc"
+    fi
+    if zsh -n "${ZSHRC}" >/dev/null 2>&1; then
+      result "zsh:syntax" PASS ".zshrc passes zsh -n"
+    else
+      result "zsh:syntax" FAIL ".zshrc has a syntax error"
+    fi
+  else
+    result "zsh:zshrc" WARN "~/.zshrc missing; rerun 50-extras.sh --zsh"
+  fi
+else
+  log "skip: zsh extras (50-extras.sh --zsh not selected)"
+fi
+
 section "Gaming / Steam"
 if [[ -f "${HOME}/.config/arch-niri-setup/gaming" ]]; then
   if grep -q '^\[multilib\]' /etc/pacman.conf; then

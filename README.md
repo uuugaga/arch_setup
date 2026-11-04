@@ -16,7 +16,7 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **183 PASS / 2 WARN / 0 FAIL** (with an active niri session; logged-out runs add the no-niri warning)
+- `logs/validate.md`: **194 PASS / 2 WARN / 0 FAIL** (with an active niri session; logged-out runs add the no-niri warning)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
