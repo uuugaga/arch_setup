@@ -38,6 +38,21 @@ grep -Eiq 'vmware|virtualbox|svga' <<< "${GPU_INFO}" && HAS_VMWARE=1
 
 pacman_install pciutils mesa mesa-utils
 
+install_available_pkgs() {
+  local available=()
+  local p
+  for p in "$@"; do
+    if pkg_available "${p}"; then
+      available+=("${p}")
+    else
+      warn "not available in enabled repos: ${p}"
+    fi
+  done
+  if [[ "${#available[@]}" -gt 0 ]]; then
+    pacman_install "${available[@]}"
+  fi
+}
+
 if [[ "${HAS_VMWARE}" -eq 1 ]]; then
   section "Virtual machine GPU (VMSVGA/vmwgfx)"
   pacman_install libva libva-utils
@@ -46,44 +61,40 @@ fi
 
 if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
   section "NVIDIA GPU"
-  NVIDIA_PKGS=()
 
+  # This project assumes the standard Arch kernel. The open modules are the
+  # only NVIDIA kernel modules in the current official repositories; legacy
+  # Pascal/Maxwell cards need an out-of-tree driver instead.
   if pkg_present linux; then
-    if pkg_available nvidia-open; then
-      NVIDIA_PKGS+=(nvidia-open)
-    else
-      NVIDIA_PKGS+=(nvidia)
-    fi
+    NVIDIA_MODULE_PKG=nvidia-open
+  elif pkg_present linux-lts; then
+    NVIDIA_MODULE_PKG=nvidia-open-lts
+  else
+    die "NVIDIA path requires the standard 'linux' kernel package (or linux-lts)."
+  fi
+  pkg_available "${NVIDIA_MODULE_PKG}" \
+    || die "${NVIDIA_MODULE_PKG} is not available in the enabled repositories; install a legacy NVIDIA driver manually."
+
+  NVIDIA_MODEL="$(grep -i nvidia <<< "${GPU_INFO}" | head -n 1 || true)"
+  if grep -Eiq 'GTX[[:space:]]*(6|7|8|9|10)|GT[[:space:]]*(6|7|8|9|10)|Quadro[[:space:]]*(K|M|P)|Tesla[[:space:]]*(K|M|P)|Pascal|Maxwell|Kepler' <<< "${NVIDIA_MODEL}"; then
+    die "Detected a pre-Turing NVIDIA GPU (${NVIDIA_MODEL}). nvidia-open does not support it; install a legacy NVIDIA driver manually."
   fi
 
-  if pkg_present linux-lts; then
-    if pkg_available nvidia-open-lts; then
-      NVIDIA_PKGS+=(nvidia-open-lts)
-    else
-      NVIDIA_PKGS+=(nvidia-lts)
-    fi
+  NVIDIA_PKGS=(
+    "${NVIDIA_MODULE_PKG}"
+    nvidia-utils
+    nvidia-settings
+    libva-nvidia-driver
+    libva-utils
+    vulkan-icd-loader
+    libxnvctrl
+  )
+  # Hybrid laptops need prime-run for NVIDIA render offload.
+  if [[ "${HAS_INTEL}" -eq 1 || "${HAS_AMD}" -eq 1 ]]; then
+    NVIDIA_PKGS+=(nvidia-prime)
   fi
-
-  NEED_DKMS=0
-  pkg_present linux-zen && NEED_DKMS=1
-  pkg_present linux-hardened && NEED_DKMS=1
-  [[ "${#NVIDIA_PKGS[@]}" -eq 0 ]] && NEED_DKMS=1
-
-  if [[ "${NEED_DKMS}" -eq 1 ]]; then
-    if pkg_available nvidia-open-dkms; then
-      NVIDIA_PKGS+=(nvidia-open-dkms)
-    else
-      NVIDIA_PKGS+=(nvidia-dkms)
-    fi
-    NVIDIA_PKGS+=(dkms)
-    pkg_present linux && NVIDIA_PKGS+=(linux-headers)
-    pkg_present linux-lts && NVIDIA_PKGS+=(linux-lts-headers)
-    pkg_present linux-zen && NVIDIA_PKGS+=(linux-zen-headers)
-    pkg_present linux-hardened && NVIDIA_PKGS+=(linux-hardened-headers)
-  fi
-
-  NVIDIA_PKGS+=(nvidia-utils nvidia-settings libva-nvidia-driver)
   pacman_install "${NVIDIA_PKGS[@]}"
+  install_available_pkgs linux-firmware-nvidia
 
   MODPROBE_TMP="$(mktemp)"
   cat > "${MODPROBE_TMP}" <<'EOF'
@@ -97,12 +108,18 @@ fi
 
 if [[ "${HAS_AMD}" -eq 1 ]]; then
   section "AMD GPU"
-  pacman_install vulkan-radeon libva-mesa-driver mesa-vdpau
+  # mesa already provides libva-mesa-driver and the radeonsi VA-API driver.
+  # mesa-vdpau was removed from the repositories; VA-API is the supported path.
+  pacman_install vulkan-radeon libva-utils
+  install_available_pkgs linux-firmware-amdgpu linux-firmware-radeon
 fi
 
 if [[ "${HAS_INTEL}" -eq 1 ]]; then
   section "Intel GPU"
-  pacman_install vulkan-intel intel-media-driver
+  # intel-media-driver covers Gen9+; libva-intel-driver keeps older i965
+  # hardware working. They can coexist.
+  pacman_install vulkan-intel intel-media-driver libva-intel-driver libva-utils
+  install_available_pkgs linux-firmware-intel
 fi
 
 if [[ "${HAS_NVIDIA}" -eq 0 && "${HAS_AMD}" -eq 0 && "${HAS_INTEL}" -eq 0 && "${HAS_VMWARE}" -eq 0 ]]; then

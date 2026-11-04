@@ -248,11 +248,39 @@ or re-run `--fcitx`.
   binary.
 - Steam belongs to `--gaming`, not `--apps`.
 
+## GPU drivers
+
+- `install/60-gpu.sh` is the only GPU-package writer. It assumes the standard
+  Arch `linux` kernel; do not add DKMS or multi-kernel branches unless the user
+  explicitly asks. `WANT_32BIT=1` adds 32-bit graphics libraries.
+- NVIDIA: official repos now ship `nvidia-open` / `nvidia-open-lts` only.
+  `nvidia-open` supports Turing (RTX 20xx / GTX 16xx) and newer; Pascal, Maxwell
+  and Kepler need a legacy out-of-tree driver, and `60-gpu.sh` stops with an
+  error instead of installing an unsupported open module. The script installs
+  `nvidia-utils`, `nvidia-settings`, `libva-nvidia-driver`, `vulkan-icd-loader`
+  and `libxnvctrl`, deploys the managed `nvidia_drm` options, and rebuilds the
+  initramfs. Hybrid systems also get `nvidia-prime` (`prime-run`).
+- AMD: use `vulkan-radeon` + `libva-utils` and Mesa's built-in VA-API driver.
+  `mesa-vdpau` no longer exists in Arch; do not reintroduce it.
+- Intel: `intel-media-driver` covers Gen9+; `libva-intel-driver` is the i965
+  fallback. Both can coexist.
+- VMware/VirtualBox: Mesa + `vmwgfx` + `libva`; no vendor driver. The guest
+  still needs VMSVGA 3D acceleration for niri.
+- Install vendor firmware explicitly (`linux-firmware-nvidia`,
+  `linux-firmware-amdgpu`/`-radeon`, `linux-firmware-intel`); `linux` only lists
+  `linux-firmware` as an optional dependency.
+- 32-bit gaming: `50-extras.sh --gaming` selects `GAMING_32BIT_NVIDIA`,
+  `GAMING_32BIT_AMD` or `GAMING_32BIT_INTEL` from `lspci`; only VMs/unknown GPUs
+  get `GAMING_SOFTWARE_VULKAN`. Do not make `lib32-vulkan-swrast` unconditional:
+  it can leave 32-bit games on lavapipe on bare metal.
+- Only the VMware path has been exercised in this VM. Bare-metal NVIDIA/AMD/Intel
+  changes must be described as package-checked, not hardware-tested.
+
 ## Steam / gaming
 
 - `50-extras.sh --gaming` is official-repository only. It enables `[multilib]`
   with a backup of `/etc/pacman.conf`, runs `pacman -Syu`, then installs
-  `EXTRAS_GAMING`.
+  `EXTRAS_GAMING` plus the detected `GAMING_32BIT_*` group.
 - Enabling multilib requires a full `-Syu`; do not replace it with a partial
   `-Sy`. Do not reboot after install. Kernel/package updates take effect on the
   next user-approved boot.
@@ -264,9 +292,10 @@ or re-run `--fcitx`.
   without Steam still passes.
 - `tests/gaming-test.sh` is the optional read-only test. Keep it separate from
   `tests/smoke-test.sh`; core smoke must not fail when gaming is not installed.
-- This VM has **no hardware Vulkan** (`VMSVGA`/`vmwgfx`). `vulkan-swrast` and
-  `lib32-vulkan-swrast` provide Mesa lavapipe only. Never claim Proton/3A games
-  are playable from `vulkaninfo` output alone.
+- This VM has **no hardware Vulkan** (`VMSVGA`/`vmwgfx`), so `--gaming` selects
+  `GAMING_SOFTWARE_VULKAN` (`vulkan-swrast` + `lib32-vulkan-swrast`). That is a
+  VMware/unknown-GPU fallback, not the bare-metal default. Never claim Proton/3A
+  games are playable from `vulkaninfo` output alone.
 - MangoHud draws on `vmwgfx`, but GPU stats and CPU temperature are unavailable
   in this VM. Treat blank/zero fields as expected, not a failure.
 - `gamescope --help` works, but the real backend fails on lavapipe with

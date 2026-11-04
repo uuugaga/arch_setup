@@ -33,6 +33,37 @@ if [[ ! -f "${HOME}/.config/arch-niri-setup/gaming" ]]; then
   exit 0
 fi
 
+GPU_INFO="$(lspci -nn 2>/dev/null | grep -Ei 'VGA|3D|Display' || true)"
+HAS_NVIDIA=0
+HAS_AMD=0
+HAS_INTEL=0
+HAS_VMWARE=0
+if grep -Eiq 'nvidia' <<< "${GPU_INFO}"; then HAS_NVIDIA=1; fi
+if grep -Eiq 'amd|radeon|advanced micro devices' <<< "${GPU_INFO}"; then HAS_AMD=1; fi
+if grep -Eiq 'intel' <<< "${GPU_INFO}"; then HAS_INTEL=1; fi
+if grep -Eiq 'vmware|virtualbox|svga' <<< "${GPU_INFO}"; then HAS_VMWARE=1; fi
+
+GPU_DRIVER_PKGS=()
+GPU_32BIT_PKGS=()
+if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
+  GPU_DRIVER_PKGS+=(nvidia-utils)
+  GPU_32BIT_PKGS+=(lib32-nvidia-utils)
+fi
+if [[ "${HAS_AMD}" -eq 1 ]]; then
+  GPU_DRIVER_PKGS+=(vulkan-radeon)
+  GPU_32BIT_PKGS+=(lib32-vulkan-radeon)
+fi
+if [[ "${HAS_INTEL}" -eq 1 ]]; then
+  GPU_DRIVER_PKGS+=(vulkan-intel)
+  GPU_32BIT_PKGS+=(lib32-vulkan-intel)
+fi
+if [[ "${HAS_VMWARE}" -eq 1 ]]; then
+  GPU_DRIVER_PKGS+=(libva)
+fi
+if [[ "${#GPU_32BIT_PKGS[@]}" -eq 0 ]]; then
+  GPU_32BIT_PKGS=(lib32-vulkan-swrast)
+fi
+
 section "Multilib"
 if grep -q '^\[multilib\]' /etc/pacman.conf; then
   ok "[multilib] enabled"
@@ -46,6 +77,31 @@ for p in "${EXTRAS_GAMING[@]}"; do
     ok "package: ${p}"
   else
     bad "missing package: ${p}"
+  fi
+done
+
+section "GPU drivers"
+if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
+  if pkg_present nvidia-open || pkg_present nvidia-open-lts; then
+    ok "NVIDIA kernel modules installed"
+  else
+    bad "nvidia-open kernel modules missing"
+  fi
+fi
+for p in "${GPU_DRIVER_PKGS[@]}"; do
+  if pkg_present "${p}"; then
+    ok "GPU driver package: ${p}"
+  else
+    bad "missing GPU driver package: ${p}"
+  fi
+done
+
+section "32-bit Vulkan"
+for p in "${GPU_32BIT_PKGS[@]}"; do
+  if pkg_present "${p}"; then
+    ok "32-bit Vulkan ICD: ${p}"
+  else
+    bad "missing 32-bit Vulkan ICD: ${p}"
   fi
 done
 

@@ -41,6 +41,39 @@ result() {
   esac
 }
 
+# Vendor-aware GPU expectations. Keep this in sync with install/60-gpu.sh and
+# the GAMING_32BIT_* arrays in config/packages.conf.
+GPU_INFO="$(lspci -nn 2>/dev/null | grep -Ei 'VGA|3D|Display' || true)"
+HAS_NVIDIA=0
+HAS_AMD=0
+HAS_INTEL=0
+HAS_VMWARE=0
+if grep -Eiq 'nvidia' <<< "${GPU_INFO}"; then HAS_NVIDIA=1; fi
+if grep -Eiq 'amd|radeon|advanced micro devices' <<< "${GPU_INFO}"; then HAS_AMD=1; fi
+if grep -Eiq 'intel' <<< "${GPU_INFO}"; then HAS_INTEL=1; fi
+if grep -Eiq 'vmware|virtualbox|svga' <<< "${GPU_INFO}"; then HAS_VMWARE=1; fi
+
+GPU_DRIVER_PKGS=()
+GPU_32BIT_PKGS=()
+if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
+  GPU_DRIVER_PKGS+=(nvidia-utils vulkan-icd-loader libva-utils)
+  GPU_32BIT_PKGS+=(lib32-nvidia-utils)
+fi
+if [[ "${HAS_AMD}" -eq 1 ]]; then
+  GPU_DRIVER_PKGS+=(vulkan-radeon libva-utils)
+  GPU_32BIT_PKGS+=(lib32-vulkan-radeon)
+fi
+if [[ "${HAS_INTEL}" -eq 1 ]]; then
+  GPU_DRIVER_PKGS+=(vulkan-intel intel-media-driver libva-utils)
+  GPU_32BIT_PKGS+=(lib32-vulkan-intel)
+fi
+if [[ "${HAS_VMWARE}" -eq 1 ]]; then
+  GPU_DRIVER_PKGS+=(libva libva-utils)
+fi
+if [[ "${#GPU_32BIT_PKGS[@]}" -eq 0 ]]; then
+  GPU_32BIT_PKGS=(lib32-vulkan-swrast)
+fi
+
 {
   echo "# Niri Desktop Validation"
   echo
@@ -151,6 +184,13 @@ if [[ -f "${HOME}/.config/arch-niri-setup/gaming" ]]; then
       result "gaming:package:${p}" PASS "$(pkg_version "${p}")"
     else
       result "gaming:package:${p}" FAIL "missing"
+    fi
+  done
+  for p in "${GPU_32BIT_PKGS[@]}"; do
+    if pkg_present "${p}"; then
+      result "gaming:32bit:${p}" PASS "$(pkg_version "${p}")"
+    else
+      result "gaming:32bit:${p}" FAIL "missing; rerun 50-extras.sh --gaming"
     fi
   done
   for c in "${GAMING_COMMANDS[@]}"; do
@@ -605,6 +645,54 @@ else
 fi
 
 section "GPU / EGL"
+GPU_VENDOR_LABEL=""
+[[ "${HAS_NVIDIA}" -eq 1 ]] && GPU_VENDOR_LABEL+="nvidia "
+[[ "${HAS_AMD}" -eq 1 ]] && GPU_VENDOR_LABEL+="amd "
+[[ "${HAS_INTEL}" -eq 1 ]] && GPU_VENDOR_LABEL+="intel "
+[[ "${HAS_VMWARE}" -eq 1 ]] && GPU_VENDOR_LABEL+="vmware "
+if [[ -n "${GPU_VENDOR_LABEL}" ]]; then
+  result "gpu:vendor" PASS "${GPU_VENDOR_LABEL% }"
+else
+  result "gpu:vendor" WARN "no recognized GPU vendor"
+fi
+
+if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
+  if pkg_present nvidia-open || pkg_present nvidia-open-lts; then
+    result "gpu:nvidia-module" PASS "nvidia-open kernel modules installed"
+  else
+    result "gpu:nvidia-module" FAIL "nvidia-open module package missing"
+  fi
+fi
+for p in "${GPU_DRIVER_PKGS[@]}"; do
+  if pkg_present "${p}"; then
+    result "gpu:driver:${p}" PASS "$(pkg_version "${p}")"
+  else
+    result "gpu:driver:${p}" FAIL "missing"
+  fi
+done
+
+if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
+  if pkg_present linux-firmware-nvidia; then
+    result "gpu:firmware:nvidia" PASS "$(pkg_version linux-firmware-nvidia)"
+  else
+    result "gpu:firmware:nvidia" FAIL "linux-firmware-nvidia missing"
+  fi
+fi
+if [[ "${HAS_AMD}" -eq 1 ]]; then
+  if pkg_present linux-firmware-amdgpu || pkg_present linux-firmware-radeon; then
+    result "gpu:firmware:amd" PASS "AMD GPU firmware installed"
+  else
+    result "gpu:firmware:amd" FAIL "linux-firmware-amdgpu/-radeon missing"
+  fi
+fi
+if [[ "${HAS_INTEL}" -eq 1 ]]; then
+  if pkg_present linux-firmware-intel; then
+    result "gpu:firmware:intel" PASS "$(pkg_version linux-firmware-intel)"
+  else
+    result "gpu:firmware:intel" FAIL "linux-firmware-intel missing"
+  fi
+fi
+
 if has_command eglinfo; then
   EGL_OUT="$(sudo -n eglinfo -B 2>/dev/null || true)"
   if [[ -z "${EGL_OUT}" ]]; then

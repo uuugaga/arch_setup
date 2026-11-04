@@ -180,6 +180,28 @@ install_available_repo() {
   fi
 }
 
+# Choose the 32-bit Vulkan ICD that matches the GPU. A software lavapipe
+# fallback is only correct for VMs or unknown GPUs; installing it next to a
+# hardware GPU can make 32-bit games pick the CPU renderer.
+gaming_gpu_packages() {
+  local gpu_info
+  local has_nvidia=0
+  local has_amd=0
+  local has_intel=0
+
+  gpu_info="$(lspci -nn 2>/dev/null | grep -Ei 'VGA|3D|Display' || true)"
+  grep -Eiq 'nvidia' <<< "${gpu_info}" && has_nvidia=1
+  grep -Eiq 'amd|radeon|advanced micro devices' <<< "${gpu_info}" && has_amd=1
+  grep -Eiq 'intel' <<< "${gpu_info}" && has_intel=1
+
+  [[ "${has_nvidia}" -eq 1 ]] && printf '%s\n' "${GAMING_32BIT_NVIDIA[@]}"
+  [[ "${has_amd}" -eq 1 ]] && printf '%s\n' "${GAMING_32BIT_AMD[@]}"
+  [[ "${has_intel}" -eq 1 ]] && printf '%s\n' "${GAMING_32BIT_INTEL[@]}"
+  if [[ "${has_nvidia}" -eq 0 && "${has_amd}" -eq 0 && "${has_intel}" -eq 0 ]]; then
+    printf '%s\n' "${GAMING_SOFTWARE_VULKAN[@]}"
+  fi
+}
+
 # Steam is a [multilib] package. Enable the repository idempotently and do a
 # full -Syu the first time, because a partial -Sy would leave the system in an
 # unsupported state. The pacman.conf edit is backed up first.
@@ -378,7 +400,13 @@ fi
 if [[ "${WANT_GAMING}" -eq 1 ]]; then
   section "Module: Steam / gaming"
   enable_multilib
-  pacman_install "${EXTRAS_GAMING[@]}"
+
+  mapfile -t GAMING_GPU_PKGS < <(gaming_gpu_packages)
+  if printf '%s\n' "${GAMING_GPU_PKGS[@]}" | grep -qx 'lib32-nvidia-utils' \
+    && ! pkg_present nvidia-open && ! pkg_present nvidia-open-lts; then
+    warn "NVIDIA kernel modules are not installed yet; run WANT_32BIT=1 ./install/60-gpu.sh."
+  fi
+  pacman_install "${EXTRAS_GAMING[@]}" "${GAMING_GPU_PKGS[@]}"
 
   mkdir -p \
     "${HOME}/.config/MangoHud" \
@@ -400,7 +428,6 @@ if [[ "${WANT_GAMING}" -eq 1 ]]; then
       warn "vulkaninfo produced no output; run it again inside the graphical session."
     fi
   fi
-  warn "For NVIDIA 32-bit drivers run: WANT_32BIT=1 ./install/60-gpu.sh"
 fi
 
 if [[ "${WANT_ZSH}" -eq 1 ]]; then

@@ -16,7 +16,7 @@ guests (VMSVGA/vmwgfx) and bare-metal NVIDIA/AMD/Intel machines.
 
 Verified on 2026-11-04 in the VirtualBox guest `ArchLinux x86_64`:
 
-- `logs/validate.md`: **194 PASS / 2 WARN / 0 FAIL** (with an active niri session; logged-out runs add the no-niri warning)
+- `logs/validate.md`: **196 PASS / 2 WARN / 0 FAIL** (with an active niri session; logged-out runs add the no-niri warning)
 - `logs/graphical-test.md`: niri, Waybar, Alacritty, Fuzzel, mako, XWayland
   and portals confirmed on the graphical console (3D acceleration required)
 - `logs/theme-test.md`: hourly wallpaper rotation, soft palette and glass
@@ -147,6 +147,33 @@ Notes:
 - Tailscale still needs `sudo tailscale up` for account login.
 - Spotify Launcher downloads the actual Spotify client on first launch.
 
+## GPU drivers (`60-gpu.sh`)
+
+`60-gpu.sh` detects VMware/VirtualBox, NVIDIA, AMD and Intel from `lspci` and
+installs the matching stack. It assumes the standard Arch `linux` kernel and
+does not install DKMS or multi-kernel variants.
+
+| Platform | Packages / behavior |
+|---|---|
+| VMware / VirtualBox | Mesa + `vmwgfx` + `libva`; no vendor driver |
+| NVIDIA | `nvidia-open`, `nvidia-utils`, `nvidia-settings`, `libva-nvidia-driver`, `vulkan-icd-loader`, `libxnvctrl`; `nvidia_drm.modeset=1` + `fbdev=1`; initramfs rebuild; `nvidia-prime` on hybrids |
+| AMD | `vulkan-radeon`, `libva-utils`, `linux-firmware-amdgpu` / `linux-firmware-radeon`; Mesa provides the VA-API driver |
+| Intel | `vulkan-intel`, `intel-media-driver`, `libva-intel-driver` (older i965), `libva-utils`, `linux-firmware-intel` |
+
+Notes:
+
+- `nvidia-open` supports Turing (RTX 20xx / GTX 16xx) and newer. Pascal,
+  Maxwell and Kepler need a legacy out-of-tree driver; the official repos no
+  longer ship the old `nvidia` / `nvidia-lts` packages. `60-gpu.sh` stops with
+  an error rather than installing an unsupported open module.
+- AMD's `mesa-vdpau` package has been removed from Arch. The supported path is
+  VA-API (provided by `mesa`); `vulkan-radeon` provides RADV Vulkan.
+- 32-bit libraries are opt-in for the GPU step:
+  `WANT_32BIT=1 ./install/60-gpu.sh` adds `lib32-mesa`, the loader and the
+  vendor ICD.
+- Bare-metal NVIDIA/AMD/Intel paths are implemented and package-checked, but
+  only the VMware path has been exercised in this VM.
+
 ## Steam / gaming (`50-extras.sh --gaming`)
 
 Steam is in Arch's `[multilib]` repository. The module enables it
@@ -156,11 +183,16 @@ automatically (with a backup of `/etc/pacman.conf`), runs a full
 | Category | Packages |
 |---|---|
 | Steam | `steam`, `steam-devices` |
-| 32-bit graphics | `lib32-mesa`, `lib32-vulkan-icd-loader`, `lib32-vulkan-swrast` |
+| 32-bit graphics | `lib32-mesa`, `lib32-vulkan-icd-loader`, plus the detected vendor ICD (`lib32-nvidia-utils`, `lib32-vulkan-radeon` or `lib32-vulkan-intel`) |
 | 32-bit audio | `lib32-libpulse`, `lib32-alsa-plugins`, `lib32-alsa-lib` |
 | Performance / overlay | `gamemode`, `lib32-gamemode`, `mangohud`, `lib32-mangohud`, `gamescope` |
-| Diagnostics / Proton | `vulkan-tools`, `vulkan-swrast`, `protontricks` |
+| Diagnostics / Proton | `vulkan-tools`, `protontricks`; `vulkan-swrast` only on VMs/unknown GPUs |
 | UI font | `ttf-liberation` |
+
+`--gaming` selects the 32-bit Vulkan ICD from `lspci`; it only installs
+`vulkan-swrast` / `lib32-vulkan-swrast` when no hardware vendor is recognized.
+On NVIDIA, run `60-gpu.sh` for the kernel module; `--gaming` already installs
+the 32-bit userspace ICD.
 
 It also deploys `~/.config/MangoHud/MangoHud.conf`, creates
 `~/Games/SteamLibrary`, and writes `~/.config/arch-niri-setup/gaming` so
