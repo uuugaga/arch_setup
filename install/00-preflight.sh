@@ -55,7 +55,7 @@ passed() {
 section "Collecting system information"
 
 HOSTNAME_V="$(cat /etc/hostname 2>/dev/null || hostname 2>/dev/null || echo unknown)"
-VIRT="$(systemd-detect-virt 2>/dev/null || echo none)"
+VIRT="$(systemd-detect-virt 2>/dev/null)" || VIRT="none"
 KERNEL="$(uname -r)"
 ARCH="$(uname -m)"
 USER_NAME="$(id -un)"
@@ -326,9 +326,13 @@ else
 fi
 
 if [[ "${SNAPSHOT_NAME}" == "not-provided" ]]; then
-  warning "No snapshot name was passed. Verify the VirtualBox snapshot from the host before installing."
+  if [[ "${VIRT}" == "none" ]]; then
+    passed "Bare metal: no host snapshot required."
+  else
+    warning "No snapshot name was passed. Verify the virtualization host snapshot before installing."
+  fi
 else
-  passed "VirtualBox snapshot reported by host: ${SNAPSHOT_NAME}."
+  passed "Host snapshot reported: ${SNAPSHOT_NAME}."
 fi
 
 if [[ "${MISSING_PKGS}" -gt 0 ]]; then

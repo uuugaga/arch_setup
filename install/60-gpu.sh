@@ -19,7 +19,7 @@ require_sudo
 require_arch
 
 WANT_32BIT="${WANT_32BIT:-0}"
-VIRT="$(systemd-detect-virt 2>/dev/null || echo none)"
+VIRT="$(systemd-detect-virt 2>/dev/null)" || VIRT="none"
 GPU_INFO="$(lspci -nn 2>/dev/null | grep -Ei 'VGA|3D|Display' || true)"
 
 section "Detected environment"
