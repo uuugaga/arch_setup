@@ -217,7 +217,7 @@ enable_multilib() {
 
   section "Enabling [multilib]"
   backup_system_file /etc/pacman.conf
-  sudo -n /usr/bin/python3 - <<'PY'
+  as_root /usr/bin/python3 - <<'PY'
 from pathlib import Path
 
 path = Path("/etc/pacman.conf")
@@ -375,7 +375,7 @@ if [[ "${WANT_APPS}" -eq 1 ]]; then
   if has_command docker; then
     ensure_service_active docker.service
     if ! id -nG | tr ' ' '\n' | grep -qx docker; then
-      run sudo -n usermod -aG docker "${USER}"
+      run as_root usermod -aG docker "${USER}"
       warn "Added ${USER} to the docker group. Log out and back in to use docker without sudo."
     fi
   fi

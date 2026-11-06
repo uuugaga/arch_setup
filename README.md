@@ -73,11 +73,30 @@ logs/                 generated reports and transcripts
 
 ## Requirements
 
-- Arch Linux (VM or bare metal), a normal user in `wheel` with passwordless sudo.
+- Arch Linux (VM or bare metal), a normal user in `wheel`.
+- VM/test hosts: passwordless sudo (`sudo -n true` must succeed).
+- Bare metal/production hosts: normal interactive sudo. Run the installer from
+  a terminal so sudo can prompt; the project never creates a NOPASSWD rule.
 - Network access to `archlinux.org` and `aur.archlinux.org`.
 - At least 3 GiB free on `/` (paru + desktop packages).
-- A VirtualBox snapshot before the first install. Creating/restoring snapshots is
-  an approval-gated action in this project.
+- A VirtualBox snapshot before the first install (VM only). Creating/restoring
+  snapshots is an approval-gated action in this project.
+
+### Test/VM vs production/bare metal
+
+`install/lib/common.sh` detects the host with `systemd-detect-virt`. Override
+with `INSTALL_ENV=vm` or `INSTALL_ENV=baremetal`.
+
+- `vm`: unattended runs. `require_sudo` requires passwordless sudo and uses
+  `sudo -n`.
+- `baremetal`: production. `require_sudo` uses the caller's normal sudo,
+  prompts once with `sudo -v`, and all privileged helpers go through `as_root`.
+  No NOPASSWD rule is written. The scripts must run in an interactive terminal;
+  a non-interactive SSH run fails before changing anything.
+
+`00-preflight.sh` reports the detected environment and the sudo policy.
+`90-validate.sh` never prompts: sudo-only checks report WARN until you run
+`sudo -v` in the same terminal first.
 
 ## Quick start
 

@@ -34,21 +34,21 @@ section "Creating the snapper root config"
 if [[ -f /etc/snapper/configs/root ]]; then
   log "snapper root config already exists"
 else
-  run sudo -n snapper -c root create-config /
+  run as_root snapper -c root create-config /
 fi
 
 section "Disabling automatic snapshots"
 for timer in snapper-timeline.timer snapper-cleanup.timer snapper-boot.timer; do
   if systemctl list-unit-files "${timer}" --no-legend 2>/dev/null | grep -q "${timer}"; then
-    run sudo -n systemctl disable --now "${timer}" || warn "Could not disable ${timer}"
+    run as_root systemctl disable --now "${timer}" || warn "Could not disable ${timer}"
   else
     log "timer not present: ${timer}"
   fi
 done
 
-run sudo -n snapper -c root set-config TIMELINE_CREATE=no
-run sudo -n snapper -c root set-config NUMBER_LIMIT=5
-run sudo -n snapper -c root set-config NUMBER_LIMIT_IMPORTANT=3
+run as_root snapper -c root set-config TIMELINE_CREATE=no
+run as_root snapper -c root set-config NUMBER_LIMIT=5
+run as_root snapper -c root set-config NUMBER_LIMIT_IMPORTANT=3
 
 if pkg_present snap-pac; then
   warn "snap-pac is installed; it creates automatic pacman snapshots."
@@ -57,16 +57,16 @@ fi
 
 section "Creating the baseline manual snapshot"
 # Idempotent: keep the first baseline; use snapper create for a new one.
-if sudo -n snapper -c root list --columns description 2>/dev/null | grep -qx "baseline-manual"; then
+if as_root snapper -c root list --columns description 2>/dev/null | grep -qx "baseline-manual"; then
   log "baseline-manual already exists; keeping it"
 else
-  run sudo -n snapper -c root create \
+  run as_root snapper -c root create \
     --description "baseline-manual" \
     --userdata important=yes
 fi
 
 section "Snapshot status"
-run sudo -n snapper -c root list
+run as_root snapper -c root list
 for timer in snapper-timeline.timer snapper-cleanup.timer snapper-boot.timer; do
   if systemctl list-unit-files "${timer}" --no-legend 2>/dev/null | grep -q "${timer}"; then
     printf '%s: %s\n' "${timer}" "$(systemctl is-enabled "${timer}" 2>/dev/null || true)"
@@ -79,7 +79,7 @@ else
   warn "btrfs-assistant command not found"
 fi
 
-run sudo -n btrfs filesystem usage /
+run as_root btrfs filesystem usage /
 
 section "Snapshot step complete"
 info "Automatic snapshots are disabled (TIMELINE_CREATE=no, timers disabled)."

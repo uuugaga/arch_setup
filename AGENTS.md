@@ -19,6 +19,10 @@ folder is user history: **do not modify or delete it** unless explicitly asked.
   shell commands.
 - Every entry script: `set -Eeuo pipefail`, source `install/lib/common.sh`,
   call `init_logging`, and use the shared helpers.
+- VM/test installs may use passwordless sudo. Bare-metal/production installs
+  must use interactive sudo and must never create NOPASSWD rules. The split is
+  `INSTALL_ENV=auto|vm|baremetal`; bare-metal scripts fail before changing
+  anything when stdin is not a TTY.
 - Deployed files must keep the `managed-by: arch-niri-setup` marker.
 - Back up before replacing. `deploy_file` refuses unmanaged files unless
   `FORCE=1`.
@@ -321,7 +325,9 @@ or re-run `--fcitx`.
 1. `bash -n` every shell script and `python3 -m py_compile` the theme script.
 2. `./install/00-preflight.sh` must exit 0 before installing.
 3. Run the core steps (including `45-theme.sh`).
-4. `./install/90-validate.sh` must have zero FAIL. WARN is acceptable only for
+4. On bare metal, run `sudo -v` in the same terminal before
+   `./install/90-validate.sh`; snapshot checks report WARN without cached sudo.
+   `./install/90-validate.sh` must have zero FAIL. WARN is acceptable only for
    documented reasons (no niri process over SSH, greetd not started yet).
 5. `./tests/smoke-test.sh` must exit 0.
 6. Graphical console test is separate and mandatory. SSH cannot prove Wayland.
@@ -369,4 +375,6 @@ or re-run `--fcitx`.
   `aur_install`, `ensure_service_enabled`, `pkg_present`.
 - Prefer small functions and explicit arrays.
 - Avoid `eval`, unquoted globs, and `rm -rf` on user paths.
-- Use `sudo -n` (passwordless) and fail clearly if it is unavailable.
+- Use normal interactive sudo on bare metal. VM/test hosts may use `sudo -n`
+  with passwordless sudo; bare-metal/production hosts must use `as_root`
+  (which resolves to plain `sudo`) and must never create NOPASSWD rules.

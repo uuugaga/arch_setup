@@ -139,7 +139,7 @@ fi
 
 if [[ "${HAS_NVIDIA}" -eq 1 ]]; then
   section "Regenerating initramfs for NVIDIA"
-  run sudo -n mkinitcpio -p linux
+  run as_root mkinitcpio -p linux
 fi
 
 section "GPU step complete"

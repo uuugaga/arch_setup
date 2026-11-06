@@ -101,8 +101,64 @@ require_non_root() {
   [[ "${EUID}" -ne 0 ]] || die "Do not run this script as root. Run it as the normal desktop user."
 }
 
+# Install environment:
+#   vm        - test/VM host: unattended runs, passwordless sudo required.
+#   baremetal - production/bare metal: interactive sudo, never NOPASSWD.
+# INSTALL_ENV=auto uses systemd-detect-virt; override with vm|baremetal.
+INSTALL_ENV="${INSTALL_ENV:-auto}"
+SUDO=()
+
+detect_install_env() {
+  local virt
+  case "${INSTALL_ENV}" in
+    vm|baremetal)
+      ;;
+    auto)
+      virt="$(systemd-detect-virt 2>/dev/null)" || virt="none"
+      if [[ "${virt}" == "none" ]]; then
+        INSTALL_ENV="baremetal"
+      else
+        INSTALL_ENV="vm"
+      fi
+      ;;
+    *)
+      die "INSTALL_ENV must be auto, vm, or baremetal (got: ${INSTALL_ENV})."
+      ;;
+  esac
+}
+
+as_root() {
+  [[ "${#SUDO[@]}" -gt 0 ]] || die "Internal error: as_root called before require_sudo."
+  "${SUDO[@]}" "$@"
+}
+
 require_sudo() {
-  sudo -n true 2>/dev/null || die "Passwordless sudo is required: 'sudo -n true' failed."
+  detect_install_env
+
+  if [[ "${INSTALL_ENV}" == "vm" ]]; then
+    sudo -n true 2>/dev/null \
+      || die "VM/test installs require passwordless sudo ('sudo -n true' failed). On bare metal, use INSTALL_ENV=baremetal for interactive sudo."
+    SUDO=(sudo -n)
+    info "Test/VM environment: using passwordless sudo."
+    return 0
+  fi
+
+  # Bare metal / production: use the user's normal sudo. A cached credential
+  # from 'sudo -v' is fine; this project never creates a NOPASSWD rule.
+  if sudo -n true 2>/dev/null; then
+    SUDO=(sudo)
+    info "Bare-metal environment: using interactive sudo (credentials already cached)."
+    return 0
+  fi
+
+  # init_logging redirects stdout through tee, so test stdin, not stdout.
+  if [[ ! -t 0 ]]; then
+    die "Bare-metal installs need an interactive terminal for sudo. Run this script directly in a terminal, or run 'sudo -v' in the same terminal first."
+  fi
+
+  info "Bare-metal environment: authenticating sudo once. No passwordless rule will be installed."
+  sudo -v || die "sudo authentication failed."
+  SUDO=(sudo)
 }
 
 require_arch() {
@@ -137,13 +193,13 @@ run_quiet() {
 
 pacman_upgrade() {
   section "Full system upgrade"
-  run sudo -n pacman -Syu --noconfirm
+  run as_root pacman -Syu --noconfirm
 }
 
 pacman_install() {
   [[ "$#" -gt 0 ]] || die "pacman_install called without packages"
   section "Installing repo packages"
-  run sudo -n pacman -S --needed --noconfirm "$@"
+  run as_root pacman -S --needed --noconfirm "$@"
 }
 
 aur_install() {
@@ -167,10 +223,10 @@ backup_file() {
 backup_system_file() {
   local path="$1"
   local dest
-  sudo -n test -e "${path}" || return 0
+  as_root test -e "${path}" || return 0
   dest="${SYSTEM_BACKUP_ROOT}/${RUN_TS}/${path#/}"
-  sudo -n mkdir -p "$(dirname "${dest}")"
-  sudo -n cp -a "${path}" "${dest}"
+  as_root mkdir -p "$(dirname "${dest}")"
+  as_root cp -a "${path}" "${dest}"
   log "system backup: ${path} -> ${dest}"
 }
 
@@ -220,13 +276,13 @@ deploy_system_file() {
 
   [[ -f "${src}" ]] || die "deploy_system_file: missing source ${src}"
 
-  if sudo -n test -f "${dest}" && sudo -n cmp -s "${src}" "${dest}"; then
+  if as_root test -f "${dest}" && as_root cmp -s "${src}" "${dest}"; then
     log "unchanged: ${dest}"
     return 0
   fi
 
-  if sudo -n test -e "${dest}"; then
-    if [[ "${force}" != "1" ]] && ! sudo -n grep -qF "${MARKER}" "${dest}" 2>/dev/null; then
+  if as_root test -e "${dest}"; then
+    if [[ "${force}" != "1" ]] && ! as_root grep -qF "${MARKER}" "${dest}" 2>/dev/null; then
       warn "conflict: ${dest} exists and is not managed by this project"
       warn "  keeping existing file; rerun with --force to back it up and replace it"
       return 2
@@ -235,8 +291,8 @@ deploy_system_file() {
   fi
 
   tmp="${dest}.tmp.$$"
-  sudo -n install -Dm644 "${src}" "${tmp}"
-  sudo -n mv -f "${tmp}" "${dest}"
+  as_root install -Dm644 "${src}" "${tmp}"
+  as_root mv -f "${tmp}" "${dest}"
   log "deployed: ${dest}"
 }
 
@@ -248,7 +304,7 @@ ensure_service_enabled() {
   if service_enabled "$1"; then
     log "already enabled: $1"
   else
-    run sudo -n systemctl enable "$1"
+    run as_root systemctl enable "$1"
   fi
 }
 
@@ -256,14 +312,14 @@ ensure_service_active() {
   if systemctl is-active -q "$1" 2>/dev/null; then
     log "already active: $1"
   else
-    run sudo -n systemctl enable --now "$1"
+    run as_root systemctl enable --now "$1"
   fi
 }
 
 disable_service_if_enabled() {
   if service_enabled "$1"; then
     warn "disabling conflicting display manager: $1"
-    run sudo -n systemctl disable "$1"
+    run as_root systemctl disable "$1"
   fi
 }
 

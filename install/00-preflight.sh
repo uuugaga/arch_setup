@@ -16,6 +16,7 @@ source "${SCRIPT_DIR}/lib/common.sh"
 # shellcheck source=../config/packages.conf
 source "${PROJECT_ROOT}/config/packages.conf"
 init_logging preflight notrap
+detect_install_env
 
 REPORT="${LOG_DIR}/preflight.md"
 ENVFILE="${LOG_DIR}/preflight.env"
@@ -66,7 +67,11 @@ SUDO_OK="no"
 if sudo -n true 2>/dev/null; then
   SUDO_OK="yes"
 fi
-SUDO_USER_RESULT="$(sudo -n whoami 2>/dev/null || echo failed)"
+if [[ "${SUDO_OK}" == "yes" ]]; then
+  SUDO_USER_RESULT="$(sudo -n whoami 2>/dev/null || echo failed)"
+else
+  SUDO_USER_RESULT="n/a (interactive)"
+fi
 OS_PRETTY="$(grep '^PRETTY_NAME=' /etc/os-release 2>/dev/null | cut -d= -f2- | tr -d '"' || echo unknown)"
 SESSION_TYPE="${XDG_SESSION_TYPE:-unset}"
 DEFAULT_TARGET="$(systemctl get-default 2>/dev/null || echo unknown)"
@@ -169,6 +174,8 @@ md_row "Architecture" "uname -m" "${ARCH}"
 md_row "User" "id -un" "${USER_NAME}"
 md_row "Groups" "id -Gn" "${USER_GROUPS}"
 md_row "Running as root" "EUID" "${IS_ROOT}"
+md_row "Install environment" "INSTALL_ENV" "${INSTALL_ENV}"
+md_row "Sudo policy" "vm=passwordless, baremetal=interactive" "-"
 md_row "Passwordless sudo" "sudo -n true" "${SUDO_OK}"
 md_row "sudo -n whoami" "result" "${SUDO_USER_RESULT}"
 md_row "Virtualization" "systemd-detect-virt" "${VIRT}"
@@ -295,10 +302,18 @@ else
   critical "This is not Arch Linux."
 fi
 
-if [[ "${SUDO_OK}" == "yes" ]]; then
-  passed "Passwordless sudo works (sudo -n whoami = ${SUDO_USER_RESULT})."
+if [[ "${INSTALL_ENV}" == "vm" ]]; then
+  if [[ "${SUDO_OK}" == "yes" ]]; then
+    passed "VM/test: passwordless sudo works (sudo -n whoami = ${SUDO_USER_RESULT})."
+  else
+    critical "VM/test install: passwordless sudo is required ('sudo -n true' failed)."
+  fi
 else
-  critical "Passwordless sudo is not available."
+  if [[ "${SUDO_OK}" == "yes" ]]; then
+    warning "Bare metal: passwordless sudo is enabled; production policy expects interactive sudo."
+  else
+    passed "Bare metal: interactive sudo (no passwordless rule required)."
+  fi
 fi
 
 if [[ "${PACMAN_LOCK}" == "absent" ]]; then
@@ -380,6 +395,7 @@ STATUS="ok"
   echo "PREFLIGHT_WARNINGS=${WARNINGS}"
   echo "PREFLIGHT_MISSING_PKGS=${MISSING_PKGS}"
   echo "VIRT=${VIRT}"
+  echo "INSTALL_ENV=${INSTALL_ENV}"
   echo "GPU_VENDOR=${GPU_VENDOR}"
   echo "ARCH=${ARCH}"
   echo "HAS_NIRI=${HAS_NIRI}"

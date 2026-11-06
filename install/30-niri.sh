@@ -63,14 +63,14 @@ deploy_system_file \
 if [[ "${rc}" -ne 0 ]]; then
   die "Failed to deploy the greetd quiet-session drop-in (exit ${rc})."
 fi
-run sudo -n systemctl daemon-reload
+run as_root systemctl daemon-reload
 
 section "Enabling services"
 ensure_service_enabled greetd.service
 for other_dm in sddm.service gdm.service lightdm.service ly.service; do
   disable_service_if_enabled "${other_dm}"
 done
-run sudo -n systemctl set-default graphical.target
+run as_root systemctl set-default graphical.target
 
 section "Checking XWayland support"
 if has_command xwayland-satellite; then

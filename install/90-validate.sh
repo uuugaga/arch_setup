@@ -17,6 +17,11 @@ init_logging validate
 require_non_root
 require_arch
 
+# Validation is read-only and never prompts for a sudo password. Checks that
+# need root report WARN when credentials are not already cached.
+SUDO_CACHED=no
+sudo -n true 2>/dev/null && SUDO_CACHED=yes
+
 REPORT="${LOG_DIR}/validate.md"
 : > "${REPORT}"
 PASS=0
@@ -615,10 +620,14 @@ section "Snapshots"
 if has_command snapper && [[ -f /etc/snapper/configs/root ]]; then
   result "snapshots:snapper" PASS "snapper root config exists"
 
-  if sudo -n grep -q '^TIMELINE_CREATE="no"' /etc/snapper/configs/root 2>/dev/null; then
-    result "snapshots:timeline" PASS "TIMELINE_CREATE=no (manual-only)"
+  if [[ "${SUDO_CACHED}" == "yes" ]]; then
+    if sudo -n grep -q '^TIMELINE_CREATE="no"' /etc/snapper/configs/root 2>/dev/null; then
+      result "snapshots:timeline" PASS "TIMELINE_CREATE=no (manual-only)"
+    else
+      result "snapshots:timeline" WARN "timeline snapshots may still be enabled"
+    fi
   else
-    result "snapshots:timeline" WARN "timeline snapshots may still be enabled"
+    result "snapshots:timeline" WARN "sudo credentials not cached; cannot read snapper config (run 'sudo -v' first)"
   fi
 
   for timer in snapper-timeline.timer snapper-cleanup.timer snapper-boot.timer; do
@@ -629,10 +638,14 @@ if has_command snapper && [[ -f /etc/snapper/configs/root ]]; then
     fi
   done
 
-  if sudo -n snapper -c root list --columns description 2>/dev/null | grep -qx "baseline-manual"; then
-    result "snapshots:baseline" PASS "baseline-manual snapshot exists"
+  if [[ "${SUDO_CACHED}" == "yes" ]]; then
+    if sudo -n snapper -c root list --columns description 2>/dev/null | grep -qx "baseline-manual"; then
+      result "snapshots:baseline" PASS "baseline-manual snapshot exists"
+    else
+      result "snapshots:baseline" WARN "baseline-manual snapshot missing"
+    fi
   else
-    result "snapshots:baseline" WARN "baseline-manual snapshot missing"
+    result "snapshots:baseline" WARN "sudo credentials not cached; cannot list snapshots (run 'sudo -v' first)"
   fi
 
   if has_command btrfs-assistant; then
