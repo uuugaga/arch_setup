@@ -24,10 +24,6 @@ source "${SCRIPT_DIR}/lib/common.sh"
 source "${PROJECT_ROOT}/config/packages.conf"
 init_logging 50-extras
 
-require_non_root
-require_sudo
-require_arch
-
 FORCE="${FORCE:-0}"
 WANT_FCITX=0
 WANT_WALLPAPER=0
@@ -69,6 +65,13 @@ for arg in "$@"; do
       ;;
   esac
 done
+
+require_non_root
+require_arch
+if [[ "${WANT_FCITX}" -eq 1 || "${WANT_APPS}" -eq 1 \
+  || "${WANT_GAMING}" -eq 1 || "${WANT_ZSH}" -eq 1 ]]; then
+  require_sudo
+fi
 
 deploy_or_warn() {
   local src="$1"
