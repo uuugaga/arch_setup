@@ -66,9 +66,9 @@ Theme source files:
 - Keep `CLI_COMMANDS` in sync with `CLI_PKGS`. `90-validate.sh` and
   `tests/smoke-test.sh` use them to check both packages and PATH commands.
 - `zsh` is installed as an alternative shell but **not** made the default and
-  no zshrc is deployed by `10-packages.sh`. `50-extras.sh --zsh` is the
-  optional module for Starship, zsh plugins and the sample `~/.zshrc`. Do not
-  run `chsh` without asking the user.
+  no zshrc is deployed by `10-packages.sh`. `50-extras.sh --zsh` deploys
+  Starship, zsh plugins and the sample `~/.zshrc`; `--zsh-default` is the only
+  explicit opt-in that runs `chsh`. Never make `chsh` implicit.
 - The sample `dotfiles/zsh/zshrc` must keep `compinit` and put
   `/usr/share/zsh/plugins/zsh-completions` on `fpath`; without both, the
   installed completion package does nothing. Source

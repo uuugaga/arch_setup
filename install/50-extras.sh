@@ -7,8 +7,11 @@
 #   ./install/50-extras.sh --apps
 #   ./install/50-extras.sh --gaming
 #   ./install/50-extras.sh --zsh
+#   ./install/50-extras.sh --zsh --zsh-default
 #   ./install/50-extras.sh --all
 #
+# --zsh installs Starship/plugins and the sample ~/.zshrc but leaves the login
+# shell unchanged. --zsh-default explicitly runs chsh to make zsh the default.
 # Run install/30-niri.sh and install/40-desktop.sh first. The --fcitx module
 # replaces the core niri config with config.full.kdl, so run it last.
 
@@ -31,6 +34,7 @@ WANT_WALLPAPER=0
 WANT_APPS=0
 WANT_GAMING=0
 WANT_ZSH=0
+WANT_ZSH_DEFAULT=0
 
 usage() {
   sed -n '2,16p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
@@ -48,6 +52,7 @@ for arg in "$@"; do
     --apps) WANT_APPS=1 ;;
     --gaming) WANT_GAMING=1 ;;
     --zsh) WANT_ZSH=1 ;;
+    --zsh-default) WANT_ZSH=1; WANT_ZSH_DEFAULT=1 ;;
     --all)
       WANT_FCITX=1
       WANT_WALLPAPER=1
@@ -438,7 +443,31 @@ if [[ "${WANT_ZSH}" -eq 1 ]]; then
   if [[ "${local_rc}" -eq 2 ]]; then
     warn "Existing ~/.zshrc kept. Sample: ${DOTFILES_DIR}/zsh/zshrc"
   fi
-  info "Change your shell manually if desired: chsh -s /usr/bin/zsh"
+
+  ZSH_DEFAULT=0
+  if [[ "${WANT_ZSH_DEFAULT}" -eq 1 ]]; then
+    if has_command zsh; then
+      ZSH_BIN="$(command -v zsh)"
+      CURRENT_SHELL="$(getent passwd "${USER}" | cut -d: -f7)"
+      if [[ "${CURRENT_SHELL}" == "${ZSH_BIN}" ]]; then
+        log "login shell is already ${ZSH_BIN}"
+      else
+        run as_root chsh -s "${ZSH_BIN}" "${USER}"
+        info "Login shell changed to ${ZSH_BIN}; log out and back in to use it."
+      fi
+      ZSH_DEFAULT=1
+    else
+      warn "zsh binary not found; cannot change the login shell."
+    fi
+  else
+    info "Login shell unchanged. Rerun with --zsh-default to switch it explicitly."
+  fi
+
+  mkdir -p "${HOME}/.config/arch-niri-setup"
+  {
+    printf 'installed=%s\n' "$(date -Iseconds)"
+    printf 'default_shell=%s\n' "${ZSH_DEFAULT}"
+  } > "${HOME}/.config/arch-niri-setup/zsh"
 fi
 
 section "Extras complete"

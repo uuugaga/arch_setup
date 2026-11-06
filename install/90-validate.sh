@@ -173,6 +173,19 @@ if pkg_present starship; then
   else
     result "zsh:zshrc" WARN "~/.zshrc missing; rerun 50-extras.sh --zsh"
   fi
+
+  ZSH_MARKER="${HOME}/.config/arch-niri-setup/zsh"
+  LOGIN_SHELL="$(getent passwd "${USER}" | cut -d: -f7)"
+  ZSH_BIN="$(command -v zsh 2>/dev/null || true)"
+  if [[ -f "${ZSH_MARKER}" ]] && grep -q '^default_shell=1$' "${ZSH_MARKER}" 2>/dev/null; then
+    if [[ -n "${ZSH_BIN}" && "${LOGIN_SHELL}" == "${ZSH_BIN}" ]]; then
+      result "zsh:login-shell" PASS "zsh is the default login shell"
+    else
+      result "zsh:login-shell" FAIL "default_shell=1 but login shell is ${LOGIN_SHELL}"
+    fi
+  else
+    result "zsh:login-shell" PASS "login shell is ${LOGIN_SHELL} (zsh optional)"
+  fi
 else
   log "skip: zsh extras (50-extras.sh --zsh not selected)"
 fi

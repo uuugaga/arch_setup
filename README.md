@@ -139,6 +139,17 @@ Optional modules (run after the core steps; `--fcitx` must run after
 ./install/50-extras.sh --zsh
 ```
 
+`--zsh` installs Starship and the zsh plugins and deploys the sample
+`~/.zshrc`, but leaves the login shell unchanged. To make zsh the default
+explicitly:
+
+```bash
+./install/50-extras.sh --zsh --zsh-default
+```
+
+`--zsh-default` is the only path that runs `chsh`; `--all` never changes the
+login shell. Revert with `chsh -s /bin/bash` if needed.
+
 `--gaming` enables `[multilib]` and runs `pacman -Syu` before installing Steam.
 It does not reboot the machine. `45-theme.sh` already installs the wallpaper
 engine, so `50-extras.sh --wallpaper` is only needed if you want to redeploy
