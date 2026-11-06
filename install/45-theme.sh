@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # 45-theme.sh - install hourly wallpaper rotation and dynamic theming.
 #
-# The wallpaper images themselves are user data. Put them in
-# ~/Pictures/Wallpapers (see README) before or after running this step.
+# The wallpaper images themselves are user data. Bundled images in
+# wallpapers/ are copied into ~/Pictures/Wallpapers only when the destination
+# does not exist; existing user images are never overwritten.
 #
 # Deploys:
 #   ~/.local/bin/wallpaper-rotate
@@ -39,6 +40,26 @@ mkdir -p \
   "${HOME}/.local/state/arch-niri-setup" \
   "${HOME}/.config/systemd/user/timers.target.wants" \
   "${HOME}/Pictures/Wallpapers"
+
+section "Deploying bundled wallpapers"
+if [[ -d "${PROJECT_ROOT}/wallpapers" ]]; then
+  for src in "${PROJECT_ROOT}/wallpapers"/*; do
+    [[ -f "${src}" ]] || continue
+    case "${src,,}" in
+      *.jpg|*.jpeg|*.png|*.webp) ;;
+      *) continue ;;
+    esac
+    dest="${HOME}/Pictures/Wallpapers/$(basename "${src}")"
+    if [[ -e "${dest}" ]]; then
+      log "keeping existing wallpaper: ${dest}"
+    else
+      install -m644 "${src}" "${dest}"
+      log "deployed wallpaper: ${dest}"
+    fi
+  done
+else
+  log "no bundled wallpapers directory; skipping"
+fi
 
 section "Deploying theme scripts"
 deploy_file "${DOTFILES_DIR}/theme/theme-from-wallpaper" "${HOME}/.local/bin/theme-from-wallpaper" "${FORCE}" 755

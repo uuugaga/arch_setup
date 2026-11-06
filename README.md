@@ -55,6 +55,7 @@ install/
   lib/common.sh       logging, backups, deploy, package helpers
 config/
   packages.conf       package manifest (core + extras)
+wallpapers/            bundled wallpapers (copied without overwrite)
 dotfiles/
   niri/               config.kdl (core) and config.full.kdl (extras)
   waybar/             config, style, helper scripts
@@ -585,9 +586,11 @@ Limitations:
 
 ## Wallpaper and dynamic theme
 
-Put wallpapers in `~/Pictures/Wallpapers` on the target machine. The two images
-used for this run live in the host folder `C:\Users\uuugaga\ArchLinux\wallpaper`
-and were copied into the guest. Supported formats: jpg, jpeg, png, webp.
+Wallpapers live in `wallpapers/` in the repo and are copied into
+`~/Pictures/Wallpapers` by `install/45-theme.sh`. A file is only created when
+the destination does not already exist, so local images are never overwritten.
+Delete a local file and rerun the step to refresh it from the repo. Supported
+formats: jpg, jpeg, png, webp.
 
 `install/45-theme.sh` installs:
 

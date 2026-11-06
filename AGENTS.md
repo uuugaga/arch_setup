@@ -48,6 +48,8 @@ folder is user history: **do not modify or delete it** unless explicitly asked.
 
 Theme source files:
 
+- `wallpapers/` - bundled images; `45-theme.sh` copies only missing files into
+  `~/Pictures/Wallpapers` and never overwrites local images.
 - `dotfiles/theme/theme-from-wallpaper` - palette extraction and deployment.
 - `dotfiles/theme/templates/` - Waybar, mako, Fuzzel, Alacritty templates.
 - `dotfiles/awww/wallpaper-rotate` - stateful image selection + theme call.
@@ -89,9 +91,9 @@ or re-run `--fcitx`.
 
 ## Theme / wallpaper
 
-- Wallpaper images are user data in `~/Pictures/Wallpapers`. Do not delete or
-  overwrite them. The host source used for this run is
-  `../wallpaper` in the workspace root.
+- Bundled wallpapers live in `wallpapers/`. `45-theme.sh` copies only missing
+  files into `~/Pictures/Wallpapers` and never overwrites local images; the
+  local files are user data.
 - `theme-from-wallpaper` is the only writer of generated configs:
   `~/.config/waybar/style.css`, `~/.config/mako/config`,
   `~/.config/fuzzel/fuzzel.ini`, `~/.config/alacritty/alacritty.toml`, and the
