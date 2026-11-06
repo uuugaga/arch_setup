@@ -713,8 +713,8 @@ if has_command eglinfo; then
   fi
   if grep -qi 'No 3D enabled' <<< "${EGL_OUT}"; then
     result "gpu:egl" FAIL "VMware reports 'No 3D enabled'; niri will not render"
-  elif grep -qi 'SVGA3D' <<< "${EGL_OUT}"; then
-    result "gpu:egl" PASS "hardware EGL renderer available (SVGA3D)"
+  elif grep -qiE 'SVGA3D|radeonsi|amdgpu|nvidia|intel|iris|anv|radv' <<< "${EGL_OUT}"; then
+    result "gpu:egl" PASS "hardware EGL renderer available"
   elif grep -qiE 'llvmpipe|softpipe|swrast' <<< "${EGL_OUT}"; then
     result "gpu:egl" WARN "software EGL renderer only; niri skips software renderers"
   elif grep -qi 'renderer' <<< "${EGL_OUT}"; then
