@@ -318,10 +318,11 @@ else
   warning "GPU vendor not recognized; 60-gpu.sh will need manual review."
 fi
 
-if [[ -e /dev/dri/card0 ]]; then
-  passed "/dev/dri/card0 exists (Wayland can use DRM)."
+DRI_CARD="$(find /dev/dri -maxdepth 1 -type c -name 'card*' -print -quit 2>/dev/null || true)"
+if [[ -n "${DRI_CARD}" ]]; then
+  passed "${DRI_CARD} exists (Wayland can use DRM)."
 else
-  critical "/dev/dri/card0 is missing; a Wayland session cannot start."
+  critical "No /dev/dri/card* device; a Wayland session cannot start."
 fi
 
 if [[ "${SNAPSHOT_NAME}" == "not-provided" ]]; then
