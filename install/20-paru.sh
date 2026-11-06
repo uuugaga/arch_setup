@@ -12,7 +12,6 @@ source "${SCRIPT_DIR}/lib/common.sh"
 init_logging 20-paru
 
 require_non_root
-require_sudo
 require_arch
 
 if has_command paru; then
@@ -21,6 +20,8 @@ if has_command paru; then
   info "Nothing to do."
   exit 0
 fi
+
+require_sudo
 
 section "Installing build prerequisites"
 pacman_install base-devel git

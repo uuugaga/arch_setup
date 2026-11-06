@@ -127,7 +127,14 @@ DM_LINK="$(ls -l /etc/systemd/system/display-manager.service 2>/dev/null || echo
 HAS_NIRI="no"
 pkg_present niri && HAS_NIRI="yes"
 HAS_PARU="no"
-has_command paru && HAS_PARU="yes"
+PARU_PATH=""
+if has_command paru; then
+  HAS_PARU="yes"
+  PARU_PATH="$(command -v paru)"
+elif pkg_present paru; then
+  HAS_PARU="yes"
+  PARU_PATH="pacman:paru (not in PATH)"
+fi
 NIRI_RUNNING="no"
 pgrep -x niri >/dev/null 2>&1 && NIRI_RUNNING="yes"
 WAYLAND_SESSIONS="$(ls /usr/share/wayland-sessions 2>/dev/null | tr '\n' ' ' || echo none)"
@@ -342,9 +349,9 @@ else
 fi
 
 if [[ "${HAS_PARU}" == "yes" ]]; then
-  passed "paru is installed."
+  passed "paru is installed (${PARU_PATH})."
 else
-  warning "paru is not installed yet (20-paru.sh will build it as the user)."
+  passed "paru is not installed yet (expected; 20-paru.sh will build it)."
 fi
 
 echo >> "${REPORT}"
