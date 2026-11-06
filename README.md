@@ -117,6 +117,10 @@ cd arch-niri-setup
 ./tests/smoke-test.sh
 ```
 
+On bare metal, run these from an interactive terminal: the scripts prompt for
+sudo and never create a NOPASSWD rule. VM/test hosts with passwordless sudo can
+run the same steps unattended.
+
 `30-niri.sh` enables greetd but does not start it. Start it only when you are
 ready to use the graphical console:
 
